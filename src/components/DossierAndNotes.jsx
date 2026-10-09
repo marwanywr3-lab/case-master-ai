@@ -1,3 +1,4 @@
+// src/components/DossierAndNotes.jsx
 import React, { useState } from 'react';
 import { useCaseStore } from '../useCaseStore';
 
@@ -5,6 +6,15 @@ export default function DossierAndNotes() {
   const { activeCase, notepadContent, setNotepadContent } = useCaseStore();
   const [activeTab, setActiveTab] = useState('evidence'); // 'evidence' | 'suspects' | 'overview'
   const [isCopied, setIsCopied] = useState(false);
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const clearTimeoutRef = React.useRef(null);
+
+  // Clear timeout on unmount to prevent React memory leaks
+  React.useEffect(() => {
+    return () => {
+      if (clearTimeoutRef.current) clearTimeout(clearTimeoutRef.current);
+    };
+  }, []);
 
   // Fallback if no active case
   if (!activeCase) {
@@ -32,52 +42,62 @@ export default function DossierAndNotes() {
   };
 
   const handleClearNotes = () => {
-    if (notepadContent && window.confirm('هل أنت متأكد من رغبتك في مسح دفتر الملاحظات؟')) {
-      setNotepadContent('');
+    if (!isConfirmingClear) {
+      setIsConfirmingClear(true);
+      if (clearTimeoutRef.current) clearTimeout(clearTimeoutRef.current);
+      clearTimeoutRef.current = setTimeout(() => setIsConfirmingClear(false), 3000);
+      return;
     }
+    setNotepadContent('');
+    setIsConfirmingClear(false);
+    if (clearTimeoutRef.current) clearTimeout(clearTimeoutRef.current);
   };
 
   const wordCount = notepadContent.trim() ? notepadContent.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-l border-noir-800 flex-shrink-0 select-text overflow-hidden">
+    <div className="w-full lg:w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-l border-noir-800 flex-shrink-0 select-text overflow-hidden">
       
       {/* ========================================================================= */}
       {/* TOP SECTION: INVESTIGATOR'S FREE NOTEPAD (Auto-saved to localStorage)    */}
       {/* ========================================================================= */}
-      <div className="h-[46%] flex flex-col border-b border-noir-800 bg-noir-900/50">
+      <div className="h-[45%] flex flex-col border-b border-noir-800 bg-noir-900/50">
         
         {/* Notepad Header */}
-        <div className="h-11 px-4 border-b border-noir-850 flex items-center justify-between bg-noir-900/90">
+        <div className="h-11 px-3 sm:px-4 border-b border-noir-850 flex items-center justify-between bg-noir-900/90">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-amber-500" />
             <h3 className="text-xs font-bold text-slate-200 tracking-wide">دفتر ملاحظات المحقق</h3>
-            <span className="text-[10px] text-slate-500 font-mono">({wordCount} كلمة)</span>
+            <span className="text-[10px] text-slate-500 font-mono hidden sm:inline">({wordCount} كلمة)</span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <span className="text-[9px] font-mono text-emerald-400/90 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">
               حفظ تلقائي ✓
             </span>
             <button
               onClick={handleCopyNotes}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-noir-800 transition text-[11px]"
+              className="p-1.5 rounded text-slate-400 hover:text-white hover:bg-noir-850 transition text-xs"
               title="نسخ الملاحظات"
             >
               {isCopied ? 'تم النسخ!' : '📋'}
             </button>
             <button
               onClick={handleClearNotes}
-              className="p-1 rounded text-slate-400 hover:text-red-400 hover:bg-noir-800 transition text-[11px]"
+              className={`p-1.5 rounded transition text-xs flex items-center gap-1 ${
+                isConfirmingClear
+                  ? 'bg-red-600/30 text-red-300 border border-red-500/50 px-2'
+                  : 'text-slate-400 hover:text-red-400 hover:bg-noir-850'
+              }`}
               title="مسح الدفتر"
             >
-              🗑️
+              {isConfirmingClear ? 'تأكيد المسح؟' : '🗑️'}
             </button>
           </div>
         </div>
 
         {/* Notepad Textarea with grid texture */}
-        <div className="flex-1 p-3 relative">
+        <div className="flex-1 p-2 sm:p-3 relative">
           <textarea
             value={notepadContent}
             onChange={(e) => setNotepadContent(e.target.value)}
@@ -90,42 +110,42 @@ export default function DossierAndNotes() {
       {/* ========================================================================= */}
       {/* BOTTOM SECTION: CASE DOSSIER & DISCOVERED EVIDENCE LOG                    */}
       {/* ========================================================================= */}
-      <div className="h-[54%] flex flex-col bg-noir-950">
+      <div className="h-[55%] flex flex-col bg-noir-950">
         
         {/* Navigation Tabs */}
         <div className="h-11 px-2 border-b border-noir-800 bg-noir-900/80 flex items-center justify-between">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('evidence')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition flex items-center gap-1.5 ${
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-md transition flex items-center gap-1 ${
                 activeTab === 'evidence'
                   ? 'bg-red-600/20 text-red-400 border border-red-500/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-noir-850'
               }`}
             >
               <span>الأدلة الجنائية</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-noir-800 text-slate-300 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-noir-800 text-slate-300 font-mono">
                 {evidenceList.length}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('suspects')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition flex items-center gap-1.5 ${
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-md transition flex items-center gap-1 ${
                 activeTab === 'suspects'
                   ? 'bg-red-600/20 text-red-400 border border-red-500/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-noir-850'
               }`}
             >
               <span>المشتبه بهم</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-noir-800 text-slate-300 font-mono">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-noir-800 text-slate-300 font-mono">
                 {suspects.length}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
+              className={`px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-md transition ${
                 activeTab === 'overview'
                   ? 'bg-red-600/20 text-red-400 border border-red-500/40'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-noir-850'
@@ -135,7 +155,7 @@ export default function DossierAndNotes() {
             </button>
           </div>
 
-          <span className="text-[9px] font-mono text-slate-500 px-2 uppercase">
+          <span className="text-[9px] font-mono text-slate-500 px-1 uppercase hidden sm:inline">
             DOSSIER
           </span>
         </div>
