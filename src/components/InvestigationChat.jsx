@@ -1,3 +1,4 @@
+// src/components/InvestigationChat.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useCaseStore } from '../useCaseStore';
 import { sendInvestigationMessage } from '../api';
@@ -126,7 +127,7 @@ export default function InvestigationChat() {
 - الدليل الحاسم المقدم: ${decisiveEvidenceText.trim() || 'استناداً إلى الأدلة المجمعة في السجل'}
 `.trim();
 
-    // 1. Post indictment to chat history
+    // 1. Post only user's accusation to chat history (NOT the secret solution prompt!)
     addInvestigationMessage(activeCase.id, {
       sender: 'user',
       text: indictmentNarrative,
@@ -151,6 +152,12 @@ ${indictmentNarrative}
 3. كشف كامل للرواية الواقعية للجريمة وما حدث خلف الكواليس بدقة وسرد بوليسي ممتع.
 `.trim();
 
+      // Pass indictment history along with the evaluation prompt behind the scenes
+      const virtualHistory = [
+        ...activeCase.investigationChat,
+        { sender: 'user', text: indictmentNarrative }
+      ];
+
       const response = await sendInvestigationMessage({
         apiKey,
         model: selectedModel,
@@ -159,7 +166,7 @@ ${indictmentNarrative}
           secretSolution: decryptedSolution || {},
           legalSystem: activeCase.parameters.legalSystem,
         }),
-        history: activeCase.investigationChat,
+        history: virtualHistory,
         userMessage: evaluationPrompt,
       });
 
@@ -188,52 +195,52 @@ ${indictmentNarrative}
   const isSolved = activeCase.isSolved;
 
   return (
-    <div className="flex-1 h-full flex flex-col bg-noir-900 border-x border-noir-800 relative">
+    <div className="flex-1 h-full min-w-0 flex flex-col bg-noir-900 border-x-0 lg:border-x border-noir-800 relative">
       
       {/* Top Header */}
-      <div className="h-14 px-5 border-b border-noir-800 bg-noir-950/70 backdrop-blur flex items-center justify-between">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
+      <div className="h-14 px-3 sm:px-5 border-b border-noir-800 bg-noir-950/70 backdrop-blur flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse flex-shrink-0" />
           <div className="truncate">
-            <h2 className="text-sm font-bold text-slate-100 truncate">{activeCase.title}</h2>
+            <h2 className="text-xs sm:text-sm font-bold text-slate-100 truncate">{activeCase.title}</h2>
             <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
-              <span>مسرح الجريمة: {activeCase.dossier?.crimeSceneLocation}</span>
+              <span className="truncate max-w-[140px] sm:max-w-none">مسرح الجريمة: {activeCase.dossier?.crimeSceneLocation}</span>
               <span>•</span>
               <span className="text-red-400">نظام {activeCase.parameters?.legalSystem}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isSolved ? (
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 flex items-center gap-1.5">
+            <span className="px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
               </svg>
-              <span>تم إغلاق الملف وإصدار الحكم</span>
+              <span>القضية مغلقة</span>
             </span>
           ) : (
             <button
               onClick={() => setIsIndictmentModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 hover:text-white transition shadow-sm flex items-center gap-1.5"
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 hover:text-white transition shadow-sm flex items-center gap-1.5 min-h-[36px]"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span>تقديم لائحة الاتهام النهائية</span>
+              <span>تقديم لائحة الاتهام</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Case Messages Stream */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-4 overscroll-contain">
         {activeCase.investigationChat.map((msg) => {
           const isUser = msg.sender === 'user';
           return (
             <div
               key={msg.id}
-              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-3xl ${isUser ? 'mr-auto' : 'ml-auto'}`}
+              className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-full sm:max-w-2xl lg:max-w-3xl ${isUser ? 'mr-auto' : 'ml-auto'}`}
             >
               <div className="flex items-center gap-2 mb-1 px-1">
                 <span className={`text-[11px] font-mono font-semibold ${isUser ? 'text-red-400' : 'text-slate-400'}`}>
@@ -243,7 +250,7 @@ ${indictmentNarrative}
               </div>
 
               <div
-                className={`p-4 rounded-xl text-sm leading-relaxed whitespace-pre-line border ${
+                className={`p-3 sm:p-4 rounded-xl text-xs sm:text-sm leading-relaxed whitespace-pre-line border ${
                   isUser
                     ? 'bg-red-950/30 border-red-500/40 text-slate-100 rounded-tr-none'
                     : 'bg-noir-850/90 border-noir-800 text-slate-200 rounded-tl-none shadow-md'
@@ -281,13 +288,13 @@ ${indictmentNarrative}
 
       {/* Quick Action Suggestion Chips (Available if case is ongoing) */}
       {!isSolved && (
-        <div className="px-4 py-2 border-t border-noir-800/60 bg-noir-950/40 flex items-center gap-2 overflow-x-auto text-xs no-scrollbar">
+        <div className="px-3 sm:px-4 py-2 border-t border-noir-800/60 bg-noir-950/40 flex items-center gap-2 overflow-x-auto text-xs no-scrollbar">
           <span className="text-[11px] text-slate-500 flex-shrink-0 font-mono">أوامر سريعة:</span>
           
           <button
             onClick={() => handleSendMessage('أريد فحص مسرح الجريمة والبحث عن أي آثار أو بصمات إضافية.')}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs"
+            className="px-2.5 py-1.5 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs active:scale-95"
           >
             🔍 مسح مسرح الجريمة
           </button>
@@ -295,7 +302,7 @@ ${indictmentNarrative}
           <button
             onClick={() => handleSendMessage('اطلب من فني الأدلة الجنائية فحص وتفريغ كاميرات المراقبة المحيطة.')}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs"
+            className="px-2.5 py-1.5 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs active:scale-95"
           >
             📹 فحص كاميرات المراقبة
           </button>
@@ -303,7 +310,7 @@ ${indictmentNarrative}
           <button
             onClick={() => handleSendMessage('اطلب تقرير الطب الشرعي المفصل حول وقت وطريقة الوفاة.')}
             disabled={isLoading}
-            className="px-2.5 py-1 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs"
+            className="px-2.5 py-1.5 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-slate-300 hover:text-white flex-shrink-0 transition text-xs active:scale-95"
           >
             🩺 تقرير الطب الشرعي
           </button>
@@ -313,7 +320,7 @@ ${indictmentNarrative}
               key={s.id}
               onClick={() => handleSendMessage(`استدعِ المشتبه به "${s.name}" (${s.role}) لغرفة التحقيق واستجوبه حول مكان تواجده وعلاقته بالجريمة.`)}
               disabled={isLoading}
-              className="px-2.5 py-1 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-amber-300 hover:text-amber-200 flex-shrink-0 transition text-xs"
+              className="px-2.5 py-1.5 rounded-md bg-noir-850 hover:bg-noir-800 border border-noir-750 text-amber-300 hover:text-amber-200 flex-shrink-0 transition text-xs active:scale-95"
             >
               ⚖️ استجواب {s.name}
             </button>
@@ -322,7 +329,7 @@ ${indictmentNarrative}
       )}
 
       {/* Input Form Bar */}
-      <div className="p-4 border-t border-noir-800 bg-noir-950/80">
+      <div className="p-2.5 sm:p-4 border-t border-noir-800 bg-noir-950/80">
         {isSolved ? (
           <div className="p-3 rounded-lg bg-noir-850 border border-noir-700 text-center text-xs text-slate-400">
             تم إغلاق ملف القضية وتقديم لائحة الاتهام. يمكنك مراجعة السجل والملاحظات والأدلة، أو بدء قضية جديدة.
@@ -340,16 +347,16 @@ ${indictmentNarrative}
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="وجّه سؤالاً، أو استدعِ شاهداً، أو اطلب إجراءً جنائياً في مسرح الجريمة..."
+              placeholder="وجّه سؤالاً، أو استدعِ شاهداً، أو اطلب إجراءً جنائياً..."
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 rounded-xl bg-noir-850 border border-noir-800 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 transition disabled:opacity-50"
+              className="flex-1 px-3 sm:px-4 py-2.5 rounded-xl bg-noir-850 border border-noir-800 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 transition disabled:opacity-50 min-h-[44px]"
             />
             <button
               type="submit"
               disabled={isLoading || !inputMessage.trim()}
-              className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition disabled:opacity-40 flex items-center gap-1.5"
+              className="px-3.5 sm:px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-md transition disabled:opacity-40 flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center"
             >
-              <span>إرسال</span>
+              <span className="hidden sm:inline">إرسال</span>
               <svg className="w-4 h-4 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
@@ -358,41 +365,41 @@ ${indictmentNarrative}
         )}
       </div>
 
-      {/* Indictment Modal Overlay */}
+      {/* Indictment Modal Overlay (Fully scrollable & responsive) */}
       {isIndictmentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-xl bg-noir-900 border border-red-500/40 rounded-xl shadow-2xl overflow-hidden text-slate-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-xl max-h-[92dvh] flex flex-col bg-noir-900 border border-red-500/40 rounded-xl shadow-2xl overflow-hidden text-slate-200">
             
-            <div className="px-6 py-4 border-b border-noir-800 bg-red-950/30 flex items-center justify-between">
+            <div className="px-5 py-3.5 border-b border-noir-800 bg-red-950/30 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white">
                   ⚖️
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-white">تقديم لائحة الاتهام الرسمية</h3>
-                  <p className="text-[11px] text-red-300">إغلاق ملف التحقيق وإحالة القضية للمحاكمة</p>
+                  <p className="text-[10px] text-red-300">إغلاق ملف التحقيق وإحالة القضية للمحاكمة</p>
                 </div>
               </div>
               <button
                 onClick={() => setIsIndictmentModalOpen(false)}
-                className="text-slate-400 hover:text-white text-sm"
+                className="text-slate-400 hover:text-white text-sm p-1"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSubmitIndictment} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitIndictment} className="p-4 sm:p-6 space-y-4 overflow-y-auto">
               
               {/* Select Accused Suspect */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  المتهم الموجه إليه الاتهام بالقتل/الجريمة:
+                  المتهم الموجه إليه الاتهام بالجريمة:
                 </label>
                 <select
                   value={accusedName}
                   onChange={(e) => setAccusedName(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-lg bg-noir-850 border border-noir-800 text-sm text-slate-100 focus:outline-none focus:border-red-500"
+                  className="w-full px-3 py-2.5 rounded-lg bg-noir-850 border border-noir-800 text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-red-500 min-h-[42px]"
                 >
                   <option value="">-- اختر المشتبه به المتهم --</option>
                   {activeCase.dossier?.suspects?.map((s) => (
@@ -414,7 +421,7 @@ ${indictmentNarrative}
                   onChange={(e) => setAllegedMotive(e.target.value)}
                   required
                   rows="2"
-                  placeholder="اشرح السبب الحقيقي: انتقام، سرقة، نزاع مالي، ابتزاز..."
+                  placeholder="اشرح السبب: انتقام، سرقة، نزاع مالي، ابتزاز..."
                   className="w-full px-3 py-2 rounded-lg bg-noir-850 border border-noir-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500"
                 />
               </div>
@@ -428,8 +435,8 @@ ${indictmentNarrative}
                   type="text"
                   value={allegedMethod}
                   onChange={(e) => setAllegedMethod(e.target.value)}
-                  placeholder="مثال: سم مجهول في القهوة، خنق بسلك كهربائي، تزييف حادث سقوط..."
-                  className="w-full px-3 py-2 rounded-lg bg-noir-850 border border-noir-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500"
+                  placeholder="مثال: سم مجهول، خنق، تزييف حادث سقوط..."
+                  className="w-full px-3 py-2 rounded-lg bg-noir-850 border border-noir-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500 min-h-[40px]"
                 />
               </div>
 
@@ -447,19 +454,19 @@ ${indictmentNarrative}
                 />
               </div>
 
-              <div className="pt-3 border-t border-noir-800 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-noir-800 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsIndictmentModalOpen(false)}
                   disabled={isSubmittingIndictment}
-                  className="px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white"
+                  className="px-4 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white min-h-[42px]"
                 >
                   العودة للتحقيق
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingIndictment || !accusedName}
-                  className="px-5 py-2 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-lg transition disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 sm:px-5 py-2.5 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-lg transition disabled:opacity-50 flex items-center gap-1.5 min-h-[42px]"
                 >
                   {isSubmittingIndictment ? (
                     <>
@@ -467,10 +474,10 @@ ${indictmentNarrative}
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
-                      <span>جاري مداولة الحكم وإثبات الوقائع...</span>
+                      <span>جاري المداولة...</span>
                     </>
                   ) : (
-                    <span>تأكيد الإحالة للمحاكمة وإصدار الحكم</span>
+                    <span>تأكيد الإحالة وإصدار الحكم</span>
                   )}
                 </button>
               </div>
