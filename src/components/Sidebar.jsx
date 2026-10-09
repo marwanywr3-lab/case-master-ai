@@ -1,4 +1,4 @@
-```react
+// src/components/Sidebar.jsx
 import React, { useState } from 'react';
 import { useCaseStore } from '../useCaseStore';
 import { SUPPORTED_MODELS } from '../api';
@@ -16,6 +16,8 @@ export default function Sidebar() {
     isSettingsModalOpen,
     setIsSettingsModalOpen,
     setIsNewCaseModalOpen,
+    isSidebarOpen,
+    setIsSidebarOpen,
   } = useCaseStore();
 
   const [tempApiKey, setTempApiKey] = useState(apiKey);
@@ -44,7 +46,21 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 xl:w-72 h-full bg-noir-950 border-r border-noir-800 flex flex-col flex-shrink-0 select-none">
+      {/* Mobile & Tablet Backdrop Overlay */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm lg:hidden transition-opacity animate-fadeIn"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar Container: Fixed drawer on mobile/tablet, pinned column on desktop (lg+) */}
+      <aside
+        className={`fixed lg:static inset-y-0 right-0 z-50 w-72 sm:w-80 lg:w-64 xl:w-72 h-full bg-noir-950 border-l lg:border-l-0 lg:border-r border-noir-800 flex flex-col flex-shrink-0 select-none shadow-2xl lg:shadow-none transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+        }`}
+      >
         
         {/* Brand & App Title Header */}
         <div className="h-14 px-4 border-b border-noir-800 flex items-center justify-between bg-noir-900/80">
@@ -60,27 +76,43 @@ export default function Sidebar() {
             </div>
           </div>
 
-          <button
-            onClick={handleOpenSettings}
-            className={`p-2 rounded-lg border transition ${
-              apiKey
-                ? 'text-slate-400 hover:text-white bg-noir-850 hover:bg-noir-800 border-noir-800'
-                : 'text-amber-400 bg-amber-950/40 border-amber-600/50 animate-pulse'
-            }`}
-            title="إعدادات الـ API والموديل"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handleOpenSettings}
+              className={`p-2 rounded-lg border transition ${
+                apiKey
+                  ? 'text-slate-400 hover:text-white bg-noir-850 hover:bg-noir-800 border-noir-800'
+                  : 'text-amber-400 bg-amber-950/40 border-amber-600/50 animate-pulse'
+              }`}
+              title="إعدادات الـ API والموديل"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg bg-noir-850 hover:bg-noir-800 text-slate-400 hover:text-white border border-noir-800 transition"
+              title="إغلاق القائمة"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Action Button: Open New Case Modal */}
         <div className="p-3 border-b border-noir-850">
           <button
-            onClick={() => setIsNewCaseModalOpen(true)}
-            className="w-full py-2.5 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md hover:shadow-red-600/20 transition flex items-center justify-center gap-2 group"
+            onClick={() => {
+              setIsNewCaseModalOpen(true);
+              setIsSidebarOpen(false);
+            }}
+            className="w-full py-2.5 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md hover:shadow-red-600/20 transition flex items-center justify-center gap-2 group min-h-[44px]"
           >
             <svg className="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -90,7 +122,7 @@ export default function Sidebar() {
         </div>
 
         {/* Previous Cases List */}
-        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+        <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5 overscroll-contain">
           <div className="px-2 py-1 flex items-center justify-between text-[10px] font-mono text-slate-500 uppercase tracking-wider">
             <span>سجل القضايا ({cases.length})</span>
             <span>STATUS</span>
@@ -107,8 +139,11 @@ export default function Sidebar() {
               return (
                 <div
                   key={c.id}
-                  onClick={() => setActiveCaseId(c.id)}
-                  className={`group relative p-2.5 rounded-lg cursor-pointer border transition text-right ${
+                  onClick={() => {
+                    setActiveCaseId(c.id);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`group relative p-3 rounded-lg cursor-pointer border transition text-right ${
                     isActive
                       ? 'bg-noir-850 border-red-500/60 shadow-sm'
                       : 'bg-noir-900/50 border-noir-850 hover:bg-noir-850 hover:border-noir-750 text-slate-400'
@@ -119,11 +154,11 @@ export default function Sidebar() {
                       {c.title}
                     </span>
                     {c.isSolved ? (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-mono">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 font-mono">
                         مغلقة
                       </span>
                     ) : (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950/50 text-red-400 border border-red-500/30 font-mono">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-950/50 text-red-400 border border-red-500/30 font-mono">
                         جارية
                       </span>
                     )}
@@ -134,11 +169,9 @@ export default function Sidebar() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (confirm('هل تريد حذف ملف هذه القضية نهائياً؟')) {
-                          deleteCase(c.id);
-                        }
+                        deleteCase(c.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 hover:text-red-400 p-0.5 rounded transition text-xs"
+                      className="opacity-75 sm:opacity-0 group-hover:opacity-100 hover:text-red-400 p-1 rounded transition text-xs"
                       title="حذف القضية"
                     >
                       🗑️
@@ -162,7 +195,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {}
+      {/* Settings Modal Overlay */}
       {isSettingsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
           <div className="w-full max-w-lg bg-noir-900 border border-noir-800 rounded-xl shadow-2xl overflow-hidden text-slate-200">
@@ -261,7 +294,7 @@ export default function Sidebar() {
                 </div>
               </div>
 
-              {}
+              {/* AI Studio Info */}
               <div className="p-3.5 rounded-lg bg-noir-950 border border-noir-800 text-xs space-y-2">
                 <span className="font-bold text-slate-300 flex items-center gap-1.5 text-xs">
                   <span>💡 كيف تحصل على مفتاحك مجاناً خلال دقيقة؟</span>
@@ -304,4 +337,3 @@ export default function Sidebar() {
     </>
   );
 }
-```
