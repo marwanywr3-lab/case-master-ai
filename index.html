@@ -1,22 +1,22 @@
-```html
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>CaseMaster AI | محاكي التحقيق الجنائي القانوني</title>
   
-  <!-- Favicon & Identity -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg>" />
-
-  <!-- Google Fonts: Tajawal (Arabic UI) + IBM Plex Mono (Forensic / Dossier elements) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
 
+  <!-- React 18, ReactDOM, and Babel for in-browser standalone execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
   <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -24,91 +24,1442 @@
         extend: {
           colors: {
             noir: {
-              950: '#060709', // أسود حالك لمسرح الجريمة
-              900: '#0d0f12', // خلفية البطاقات الرئيسية
-              850: '#13161c', // الحاويات المتداخلة
-              800: '#1b2028', // حدود البطاقات والعناصر
-              700: '#28303d',
-              accent: '#dc2626', // أحمر جنائي للتنبيه والأدلة
-              amber: '#d97706',  // تحذيرات التحقيق
-              cyan: '#0ea5e9',   // شات المساعد الذكي
-              gold: '#ca8a04'    // أختام الملفات والقرارات القانونية
+              950: '#07080b',
+              900: '#0d0f14',
+              850: '#141820',
+              800: '#1c222e',
+              750: '#242c3b',
+              700: '#2e384b',
+              accent: '#ef4444',
+              crimson: '#991b1b',
             }
           },
           fontFamily: {
             sans: ['Tajawal', 'sans-serif'],
             mono: ['"IBM Plex Mono"', 'monospace']
-          },
-          animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'scanline': 'scan 8s linear infinite',
-          },
-          keyframes: {
-            scan: {
-              '0%': { transform: 'translateY(-100%)' },
-              '100%': { transform: 'translateY(1000%)' }
-            }
           }
         }
       }
-    }
+    };
   </script>
 
   <style>
-    /* Custom Scrollbars for Noir Theme */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      background-color: #07080b;
+      color: #e2e8f0;
+      overflow: hidden;
+      font-family: 'Tajawal', sans-serif;
+    }
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
     }
     ::-webkit-scrollbar-track {
-      background: #0d0f12;
+      background: #0d0f14;
     }
     ::-webkit-scrollbar-thumb {
-      background: #28303d;
+      background: #242c3b;
       border-radius: 3px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #dc2626;
+      background: #ef4444;
     }
-
-    /* Selection Styling */
     ::selection {
-      background-color: #dc2626;
+      background-color: #ef4444;
       color: #ffffff;
     }
-
-    /* Forensic Scanline & Noise Effect Overlay */
-    .scanline-overlay {
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scanline-vibe {
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       pointer-events: none;
       z-index: 9999;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-      background-size: 100% 3px, 6px 100%;
-      opacity: 0.35;
-    }
-
-    /* Paper texture for notes */
-    .notepad-grid {
-      background-size: 100% 1.75rem;
-      background-image: linear-gradient(to bottom, transparent 95%, rgba(255, 255, 255, 0.05) 95%);
-      line-height: 1.75rem;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.22) 50%);
+      background-size: 100% 4px;
+      opacity: 0.25;
     }
   </style>
 </head>
-
-<body class="bg-noir-950 text-slate-200 font-sans antialiased selection:bg-noir-accent selection:text-white h-screen overflow-hidden">
-  <!-- Subtle CRT / Scanline filter for detective immersive vibe -->
-  <div class="scanline-overlay"></div>
-
-  <!-- React root container -->
+<body class="bg-noir-950 text-slate-200">
+  <div class="scanline-vibe"></div>
   <div id="root" class="h-full w-full"></div>
 
-  <!-- Entry Script for Vite / Modern JS Bundle -->
-  <script type="module" src="/src/main.jsx"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, createContext, useContext, useRef } = React;
+
+    const SUPPORTED_MODELS = {
+      LITE: 'gemini-3.5-flash-lite',
+      FLASH: 'gemini-3.8-flash',
+    };
+    const DEFAULT_MODEL = SUPPORTED_MODELS.LITE;
+
+    const STORAGE_KEYS = {
+      API_KEY: 'casemaster_gemini_api_key',
+      SELECTED_MODEL: 'casemaster_gemini_model',
+      CASES_LIST: 'casemaster_cases_history',
+      ACTIVE_CASE_ID: 'casemaster_active_case_id',
+      NOTEPAD: 'casemaster_investigator_notepad',
+    };
+
+    // Safe base64 obfuscation for hidden ground-truth solution
+    const obfuscateSolution = (obj) => {
+      try {
+        return btoa(encodeURIComponent(JSON.stringify(obj)));
+      } catch {
+        return JSON.stringify(obj);
+      }
+    };
+
+    const deobfuscateSolution = (str) => {
+      try {
+        return JSON.parse(decodeURIComponent(atob(str)));
+      } catch {
+        try {
+          return JSON.parse(str);
+        } catch {
+          return null;
+        }
+      }
+    };
+
+    const SYSTEM_PROMPTS = {
+      caseGenerator: ({ difficulty, legalSystem, depth }) => `
+أنت "المحرك الأعلى للقضايا الجنائية" (Criminal Mastermind & Case Architect).
+مهمتك تصميم قضية جنائية ذكية ومحكمة ومنطقية.
+- مستوى الصعوبة: ${difficulty}
+- النظام القانوني: ${legalSystem} (السعودي أو الأمريكي)
+- عمق التحقيق: ${depth}
+
+المخرجات حصراً بتنسيق JSON صالح ومطابق للهيكل التالي دون أي نصوص إضافية قبله أو بعده:
+{
+  "title": "عنوان مشوق وموجز للقضية",
+  "briefingSummary": "ملخص تمهيدي شيق من 3 إلى 5 أسطر حول مسرح الجريمة والضحية ليقرأه المحقق قبل الموافقة على الملف.",
+  "dossier": {
+    "victimName": "اسم الضحية",
+    "victimAge": "العمر",
+    "victimOccupation": "المهنة / الصفة",
+    "crimeSceneLocation": "تحديد مسرح الجريمة بالتفصيل",
+    "timeOfIncident": "الوقت والظروف المحيطة",
+    "initialEvidence": [
+      {
+        "id": "ev-1",
+        "name": "اسم الدليل الأولي",
+        "type": "أثر مادي / شهادة أولية",
+        "description": "وصف مفصل لما وجد في مسرح الجريمة"
+      }
+    ],
+    "suspects": [
+      {
+        "id": "susp-1",
+        "name": "اسم المشتبه به",
+        "role": "صفته وعلاقته بالضحية",
+        "alibi": "ادعاؤه الأولي لتبرير غيابه"
+      }
+    ]
+  },
+  "secretSolution": {
+    "culpritName": "اسم الجاني الحقيقي من قائمة المشتبه بهم",
+    "motive": "الدافع الحقيقي وراء الجريمة",
+    "weaponOrMethod": "أداة الجريمة أو طريقة التنفيذ",
+    "keyEvidence": "الدليل القاطع الذي يدين الجاني ويدحض حجة غيابه",
+    "flawInAlibi": "الثغرة الخفية في ادعاء الجاني",
+    "fullNarrative": "السرد الكامل لما حدث خلف الكواليس بدقة"
+  }
+}
+`,
+
+      investigationMaster: ({ caseData, secretSolution, legalSystem }) => `
+أنت "محقق مسرح الجريمة وإدارة الاستجواب" (Game Master) في محاكي التحقيق الجنائي.
+معلومات القضية:
+- العنوان: ${caseData.title}
+- الموقع: ${caseData.dossier?.crimeSceneLocation}
+- النظام القانوني: ${legalSystem}
+
+الحل السري المخفي (ممنوع منعاً باتاً كشفه إلا إذا حصره المحقق بالأدلة):
+- الجاني: ${secretSolution.culpritName}
+- الدافع: ${secretSolution.motive}
+- الأداة / الطريقة: ${secretSolution.weaponOrMethod}
+- الدليل الحاسم: ${secretSolution.keyEvidence}
+- ثغرة الحجة: ${secretSolution.flawInAlibi}
+
+تعليمات إدارة التحقيق:
+1. تقمّص شخصيات الشهود، المشتبه بهم، أو فنيي المعمل الجنائي بواقعية وذكاء حسب ما يطلبه المحقق.
+2. الجاني الحقيقي سيكذب ويراوغ، لكنه سيسقط في ثغرته إذا واجهه المحقق بالأدلة المناسبة.
+3. إذا أسفر إجراء المحقق عن اكتشاف دليل جديد، قم بتضمين كتلة JSON في نهاية ردك بالشكل التالي تماماً:
+\`\`\`evidence_log
+{
+  "newEvidence": [
+    {
+      "id": "ev-${Date.now()}",
+      "name": "اسم الدليل المكتشف",
+      "type": "مادي / فني / أثر بيولوجي",
+      "description": "تفاصيل الأثر وأهميته في القضية"
+    }
+  ]
+}
+\`\`\`
+`,
+
+      assistantEngine: ({ legalSystem }) => `
+أنت "المستشار القانوني والجنائي للمحقق" (Senior Legal Advisor).
+أنت تراقب مجريات الاستجواب ومسرح الجريمة من مكتبك لمساعدة المحقق وتنبيهه.
+النظام المعتمد: ${legalSystem} (${legalSystem === 'السعودي' ? 'نظام الإجراءات الجزائية السعودي، حظر الإكراه، مشروعية الدليل' : 'القانون الجنائي الأمريكي، Miranda Rights، التعديل الرابع'}).
+قواعدك:
+1. لا تكشف الحل السري مباشرة.
+2. حلل أقوال المشتبه بهم واستخرج التناقضات الزمنية والمكانية.
+3. اقترح أسئلة استجواب تكتيكية وملاحظات حول مشروعية الأدلة.
+4. حافظ على إيجاز الرد بأسلوب بوليسي مهني ومنظم.
+`
+    };
+
+    function extractAndParseJSON(rawText) {
+      if (!rawText) throw new Error('لا توجد استجابة نصية.');
+      const markdownRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
+      const match = rawText.match(markdownRegex);
+      const jsonCandidate = match ? match[1].trim() : rawText.trim();
+      try {
+        return JSON.parse(jsonCandidate);
+      } catch (e) {
+        const start = jsonCandidate.indexOf('{');
+        const end = jsonCandidate.lastIndexOf('}');
+        if (start !== -1 && end !== -1 && end > start) {
+          return JSON.parse(jsonCandidate.substring(start, end + 1));
+        }
+        throw new Error('تعذر قراءة بيانات القضية بصيغة JSON صالحة.');
+      }
+    }
+
+    async function callGeminiApi({ apiKey, model, systemInstruction, contents }) {
+      if (!apiKey || !apiKey.trim()) {
+        throw new Error('يرجى إدخال مفتاح Gemini API في الإعدادات أولاً.');
+      }
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+      
+      const body = {
+        contents,
+        generationConfig: { maxOutputTokens: 4096 }
+      };
+      if (systemInstruction) {
+        body.systemInstruction = { parts: [{ text: systemInstruction }] };
+      }
+
+      let res;
+      try {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        throw new Error('تعذر الاتصال بخوادم Google AI. يرجى فحص الشبكة.');
+      }
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error?.message || res.statusText;
+        if (res.status === 400 && msg.includes('API_KEY_INVALID')) {
+          throw new Error('مفتاح Gemini API غير صالح. تأكد من نسخه بدقة من Google AI Studio.');
+        }
+        if (res.status === 429) {
+          throw new Error('تم تجاوز حد الاستخدام المسموح (Rate Limit). يرجى الانتظار دقيقة.');
+        }
+        throw new Error(`خطأ من Gemini [${res.status}]: ${msg}`);
+      }
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('لم يرجع النموذج أي محتوى.');
+      return text;
+    }
+
+    async function generateNewCaseApi({ apiKey, model, systemPrompt, customSeed }) {
+      const userPrompt = customSeed
+        ? `أنشئ ملف قضية جنائية بناءً على الفكرة الإضافية: "${customSeed}". التزم بمخرجات JSON حصراً.`
+        : 'أنشئ ملف قضية جنائية جديد ومتكامل الآن وفق المعايير المحددة، بصيغة JSON الصالحة حصراً.';
+      const raw = await callGeminiApi({
+        apiKey,
+        model,
+        systemInstruction: systemPrompt,
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }]
+      });
+      return extractAndParseJSON(raw);
+    }
+
+    async function sendInvestigationMessageApi({ apiKey, model, systemPrompt, history, userMessage }) {
+      const formattedContents = history.map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+      formattedContents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+      const replyRaw = await callGeminiApi({
+        apiKey,
+        model,
+        systemInstruction: systemPrompt,
+        contents: formattedContents
+      });
+
+      let cleanText = replyRaw;
+      let newEvidence = [];
+      const evRegex = /```evidence_log\s*([\s\S]*?)\s*```/i;
+      const match = replyRaw.match(evRegex);
+      if (match) {
+        try {
+          const parsed = JSON.parse(match[1].trim());
+          if (Array.isArray(parsed.newEvidence)) {
+            newEvidence = parsed.newEvidence;
+          }
+        } catch (e) {}
+        cleanText = replyRaw.replace(evRegex, '').trim();
+      }
+
+      return { reply: cleanText, newEvidence };
+    }
+
+    async function askLegalAssistantApi({ apiKey, model, systemPrompt, investigationContext, assistantHistory, question }) {
+      const promptWithContext = `[سجل أحداث التحقيق حتى الآن]:\n${investigationContext || 'لا توجد استجوابات سابقة.'}\n---\n[سؤال المحقق للاستشارة]:\n${question}`;
+      const formatted = assistantHistory.map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: m.text }]
+      }));
+      formatted.push({ role: 'user', parts: [{ text: promptWithContext }] });
+
+      const reply = await callGeminiApi({
+        apiKey,
+        model,
+        systemInstruction: systemPrompt,
+        contents: formatted
+      });
+      return { reply: reply.trim() };
+    }
+
+    const CaseContext = createContext(null);
+
+    function CaseProvider({ children }) {
+      const [apiKey, setApiKeyState] = useState(() => localStorage.getItem(STORAGE_KEYS.API_KEY) || '');
+      const [selectedModel, setSelectedModelState] = useState(() => localStorage.getItem(STORAGE_KEYS.SELECTED_MODEL) || DEFAULT_MODEL);
+      const [cases, setCases] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEYS.CASES_LIST);
+          return saved ? JSON.parse(saved) : [];
+        } catch {
+          return [];
+        }
+      });
+      const [activeCaseId, setActiveCaseIdState] = useState(() => localStorage.getItem(STORAGE_KEYS.ACTIVE_CASE_ID) || null);
+      const [notepadContent, setNotepadContentState] = useState(() => localStorage.getItem(STORAGE_KEYS.NOTEPAD) || '');
+
+      const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState(false);
+      const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+      const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+      const setApiKey = useCallback((k) => {
+        const val = (k || '').trim();
+        setApiKeyState(val);
+        localStorage.setItem(STORAGE_KEYS.API_KEY, val);
+      }, []);
+
+      const setSelectedModel = useCallback((m) => {
+        setSelectedModelState(m);
+        localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, m);
+      }, []);
+
+      const setActiveCaseId = useCallback((id) => {
+        setActiveCaseIdState(id);
+        if (id) localStorage.setItem(STORAGE_KEYS.ACTIVE_CASE_ID, id);
+        else localStorage.removeItem(STORAGE_KEYS.ACTIVE_CASE_ID);
+      }, []);
+
+      const setNotepadContent = useCallback((content) => {
+        setNotepadContentState(content);
+        localStorage.setItem(STORAGE_KEYS.NOTEPAD, content);
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem(STORAGE_KEYS.CASES_LIST, JSON.stringify(cases));
+      }, [cases]);
+
+      const activeCase = cases.find(c => c.id === activeCaseId) || null;
+
+      const createCase = useCallback((generatedData, params) => {
+        const newId = `case-${Date.now()}`;
+        const newCase = {
+          id: newId,
+          createdAt: new Date().toISOString(),
+          title: generatedData.title || 'قضية جنائية جديدة',
+          briefingSummary: generatedData.briefingSummary || '',
+          parameters: params,
+          dossier: {
+            victimName: generatedData.dossier?.victimName || 'مجهول الهوية',
+            victimAge: generatedData.dossier?.victimAge || '-',
+            victimOccupation: generatedData.dossier?.victimOccupation || '-',
+            crimeSceneLocation: generatedData.dossier?.crimeSceneLocation || 'موقع غير محدد',
+            timeOfIncident: generatedData.dossier?.timeOfIncident || '-',
+            suspects: generatedData.dossier?.suspects || [],
+          },
+          evidenceList: Array.isArray(generatedData.dossier?.initialEvidence) ? generatedData.dossier.initialEvidence : [],
+          encryptedSecretSolution: obfuscateSolution(generatedData.secretSolution || {}),
+          isSolved: false,
+          indictmentResult: null,
+          investigationChat: [
+            {
+              id: 'msg-init',
+              sender: 'game_master',
+              text: `تم استدعاؤك رسمياً لمسرح الجريمة: [${generatedData.dossier?.crimeSceneLocation || 'المسرح'}].\nالضحية: ${generatedData.dossier?.victimName || 'شخص غير معروف'}.\nابدأ بمعاينة مسرح الجريمة أو استدعاء أي من المشتبه بهم للاستجواب فوراً.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+          ],
+          assistantChat: [
+            {
+              id: 'ast-init',
+              sender: 'assistant',
+              text: `مرحباً بك أيها المحقق. أنا مستشارك الجنائي والقانوني وفق [النظام ${params.legalSystem}].\nسأراقب معك ما يدور في مسرح الجريمة لتقديم التوجيهات ورصد أي تناقضات قانونية.`,
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            }
+          ]
+        };
+
+        setCases(prev => [newCase, ...prev]);
+        setActiveCaseId(newId);
+        return newCase;
+      }, [setActiveCaseId]);
+
+      const addInvestigationMessage = useCallback((caseId, msg) => {
+        setCases(prev => prev.map(c => {
+          if (c.id !== caseId) return c;
+          return {
+            ...c,
+            investigationChat: [
+              ...c.investigationChat,
+              { id: `m-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...msg }
+            ]
+          };
+        }));
+      }, []);
+
+      const addDiscoveredEvidence = useCallback((caseId, newItems) => {
+        if (!newItems || !newItems.length) return;
+        setCases(prev => prev.map(c => {
+          if (c.id !== caseId) return c;
+          const ids = new Set(c.evidenceList.map(e => e.id));
+          const filtered = newItems.filter(e => !ids.has(e.id));
+          return { ...c, evidenceList: [...c.evidenceList, ...filtered] };
+        }));
+      }, []);
+
+      const addAssistantMessage = useCallback((caseId, msg) => {
+        setCases(prev => prev.map(c => {
+          if (c.id !== caseId) return c;
+          return {
+            ...c,
+            assistantChat: [
+              ...c.assistantChat,
+              { id: `ast-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), ...msg }
+            ]
+          };
+        }));
+      }, []);
+
+      const closeCaseWithIndictment = useCallback((caseId, verdict) => {
+        setCases(prev => prev.map(c => {
+          if (c.id !== caseId) return c;
+          return { ...c, isSolved: true, indictmentResult: verdict };
+        }));
+      }, []);
+
+      const deleteCase = useCallback((caseId) => {
+        setCases(prev => {
+          const rem = prev.filter(c => c.id !== caseId);
+          if (activeCaseId === caseId) {
+            setActiveCaseId(rem.length > 0 ? rem[0].id : null);
+          }
+          return rem;
+        });
+      }, [activeCaseId, setActiveCaseId]);
+
+      const getDecryptedSolution = useCallback((targetCase) => {
+        if (!targetCase?.encryptedSecretSolution) return null;
+        return deobfuscateSolution(targetCase.encryptedSecretSolution);
+      }, []);
+
+      const value = {
+        apiKey, setApiKey,
+        selectedModel, setSelectedModel,
+        cases, activeCase, activeCaseId, setActiveCaseId,
+        createCase, deleteCase,
+        notepadContent, setNotepadContent,
+        addInvestigationMessage, addDiscoveredEvidence, addAssistantMessage,
+        closeCaseWithIndictment, getDecryptedSolution,
+        isNewCaseModalOpen, setIsNewCaseModalOpen,
+        isSettingsModalOpen, setIsSettingsModalOpen,
+        isSidebarOpen, setIsSidebarOpen
+      };
+
+      return <CaseContext.Provider value={value}>{children}</CaseContext.Provider>;
+    }
+
+    const useCaseStore = () => useContext(CaseContext);
+
+    function Sidebar() {
+      const {
+        cases, activeCaseId, setActiveCaseId, deleteCase,
+        apiKey, setApiKey, selectedModel, setSelectedModel,
+        isSettingsModalOpen, setIsSettingsModalOpen,
+        setIsNewCaseModalOpen, isSidebarOpen, setIsSidebarOpen
+      } = useCaseStore();
+
+      const [tempKey, setTempKey] = useState(apiKey);
+      const [showSecret, setShowSecret] = useState(false);
+      const [savedToast, setSavedToast] = useState(false);
+
+      const handleSaveSettings = (e) => {
+        e.preventDefault();
+        setApiKey(tempKey);
+        setSavedToast(true);
+        setTimeout(() => {
+          setSavedToast(false);
+          setIsSettingsModalOpen(false);
+        }, 800);
+      };
+
+      return (
+        <React.Fragment>
+          {isSidebarOpen && (
+            <div
+              onClick={() => setIsSidebarOpen(false)}
+              className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm lg:hidden"
+            />
+          )}
+
+          <aside className={`fixed lg:static inset-y-0 right-0 z-50 w-72 sm:w-80 lg:w-64 xl:w-72 h-full bg-noir-950 border-l lg:border-l-0 lg:border-r border-noir-800 flex flex-col flex-shrink-0 select-none shadow-2xl lg:shadow-none transition-transform duration-300 ease-in-out ${
+            isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'
+          }`}>
+            <div className="h-14 px-4 border-b border-noir-800 flex items-center justify-between bg-noir-900/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 font-bold text-sm shadow-sm">
+                  ⚖️
+                </div>
+                <div>
+                  <h1 className="text-xs font-black tracking-wide text-slate-100 uppercase">
+                    CaseMaster <span className="text-red-500">AI</span>
+                  </h1>
+                  <p className="text-[10px] text-slate-400 font-mono">محاكي التحقيق الجنائي</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => { setTempKey(apiKey); setIsSettingsModalOpen(true); }}
+                  className={`p-2 rounded-lg border transition ${
+                    apiKey ? 'text-slate-400 hover:text-white bg-noir-850 border-noir-800' : 'text-amber-400 bg-amber-950/40 border-amber-600/50 animate-pulse'
+                  }`}
+                  title="إعدادات الـ API والموديل"
+                >
+                  ⚙️
+                </button>
+                <button
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="lg:hidden p-2 rounded-lg bg-noir-850 text-slate-400 hover:text-white border border-noir-800"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3 border-b border-noir-800">
+              <button
+                onClick={() => { setIsNewCaseModalOpen(true); setIsSidebarOpen(false); }}
+                className="w-full py-2.5 px-3 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md transition flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <span>+ فتح ملف قضية جديدة</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+              <div className="px-2 py-1 flex items-center justify-between text-[10px] font-mono text-slate-500 uppercase">
+                <span>سجل القضايا ({cases.length})</span>
+                <span>الحالة</span>
+              </div>
+
+              {cases.length === 0 ? (
+                <div className="py-12 px-4 text-center text-slate-600 text-xs">
+                  لا توجد قضايا سابقة. افتح قضية جديدة لبدء التحقيق.
+                </div>
+              ) : (
+                cases.map(c => {
+                  const isActive = c.id === activeCaseId;
+                  return (
+                    <div
+                      key={c.id}
+                      onClick={() => { setActiveCaseId(c.id); setIsSidebarOpen(false); }}
+                      className={`group p-3 rounded-lg cursor-pointer border transition text-right ${
+                        isActive ? 'bg-noir-850 border-red-500/60 shadow-sm' : 'bg-noir-900/50 border-noir-800 hover:bg-noir-850 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className={`text-xs font-bold truncate ${isActive ? 'text-white' : 'text-slate-300'}`}>
+                          {c.title}
+                        </span>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono border ${c.isSolved ? 'bg-emerald-950/60 text-emerald-400 border-emerald-500/30' : 'bg-red-950/50 text-red-400 border-red-500/30'}`}>
+                          {c.isSolved ? 'مغلقة' : 'جارية'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                        <span>{c.parameters?.legalSystem || 'نظام'} • {c.parameters?.difficulty || 'متوسط'}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); deleteCase(c.id); }}
+                          className="hover:text-red-400 p-1 rounded transition text-xs"
+                          title="حذف القضية"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="p-3 border-t border-noir-800 bg-noir-900/50 flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${apiKey ? 'bg-emerald-500' : 'bg-amber-500 animate-ping'}`} />
+                <span className="text-slate-400">{apiKey ? 'المحرك متصل' : 'المفتاح مفقود'}</span>
+              </div>
+              <span className="text-[10px] text-slate-400 bg-noir-800 px-1.5 py-0.5 rounded border border-noir-750">
+                {selectedModel}
+              </span>
+            </div>
+          </aside>
+
+          {isSettingsModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+              <div className="w-full max-w-lg bg-noir-900 border border-noir-800 rounded-xl shadow-2xl overflow-hidden text-slate-200">
+                <div className="px-6 py-4 border-b border-noir-800 bg-noir-950/60 flex items-center justify-between">
+                  <h3 className="font-bold text-sm text-white">⚙️ إعدادات Gemini API والنماذج</h3>
+                  <button onClick={() => setIsSettingsModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <form onSubmit={handleSaveSettings} className="p-6 space-y-4">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-slate-300">Google Gemini API Key:</label>
+                    <div className="relative">
+                      <input
+                        type={showSecret ? 'text' : 'password'}
+                        value={tempKey}
+                        onChange={(e) => setTempKey(e.target.value)}
+                        placeholder="AIzaSy..."
+                        required
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-noir-850 border border-noir-800 text-xs text-slate-100 font-mono focus:outline-none focus:border-red-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecret(!showSecret)}
+                        className="absolute left-2 top-2 px-2 py-1 text-[10px] bg-noir-800 text-slate-400 hover:text-white rounded"
+                      >
+                        {showSecret ? 'إخفاء' : 'إظهار'}
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500">يُحفظ المفتاح محلياً في متصفحك (localStorage) ولا يُرسل لأي طرف ثالث.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-slate-300">النموذج المعتمد:</label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedModel(SUPPORTED_MODELS.LITE)}
+                        className={`p-2.5 rounded-lg text-right border text-xs ${selectedModel === SUPPORTED_MODELS.LITE ? 'bg-red-950/40 border-red-500 text-white' : 'bg-noir-850 border-noir-800 text-slate-400'}`}
+                      >
+                        <div className="font-bold">{SUPPORTED_MODELS.LITE}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">فائق السرعة وخفيف الاستهلاك</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedModel(SUPPORTED_MODELS.FLASH)}
+                        className={`p-2.5 rounded-lg text-right border text-xs ${selectedModel === SUPPORTED_MODELS.FLASH ? 'bg-red-950/40 border-red-500 text-white' : 'bg-noir-850 border-noir-800 text-slate-400'}`}
+                      >
+                        <div className="font-bold">{SUPPORTED_MODELS.FLASH}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">عمق وتحليل استدلالي أعلى</div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-noir-950 rounded border border-noir-800 text-[11px] text-slate-400 leading-relaxed">
+                    💡 للحصول على المفتاح مجاناً: توجه إلى <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-red-400 underline">Google AI Studio</a>، اضغط <strong>Create API key</strong>، ثم انسخ المفتاح والصقه هنا.
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between border-t border-noir-800">
+                    {savedToast && <span className="text-xs text-emerald-400 font-mono">✓ تم الحفظ بنجاح</span>}
+                    <button type="submit" className="mr-auto px-5 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow">
+                      حفظ الإعدادات
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </React.Fragment>
+      );
+    }
+
+    function AssistantChat() {
+      const { activeCase, apiKey, selectedModel, addAssistantMessage } = useCaseStore();
+      const [inputQ, setInputQ] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [err, setErr] = useState('');
+      const endRef = useRef(null);
+
+      useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [activeCase?.assistantChat, loading]);
+
+      if (!activeCase) return null;
+
+      const legalSystem = activeCase.parameters?.legalSystem || 'السعودي';
+
+      const handleAsk = async (customText = null) => {
+        const text = typeof customText === 'string' ? customText.trim() : inputQ.trim();
+        if (!text || loading) return;
+        if (!apiKey) {
+          setErr('يرجى ضبط مفتاح API في الإعدادات.');
+          return;
+        }
+
+        setErr('');
+        setInputQ('');
+        addAssistantMessage(activeCase.id, { sender: 'user', text });
+        setLoading(true);
+
+        try {
+          const context = activeCase.investigationChat.map(m => `[${m.sender === 'user' ? 'المحقق' : 'المسرح/المشتبه به'}]: ${m.text}`).join('\n\n');
+          const prompt = SYSTEM_PROMPTS.assistantEngine({ legalSystem });
+          const res = await askLegalAssistantApi({
+            apiKey,
+            model: selectedModel,
+            systemPrompt: prompt,
+            investigationContext: context,
+            assistantHistory: activeCase.assistantChat || [],
+            question: text,
+          });
+          addAssistantMessage(activeCase.id, { sender: 'assistant', text: res.reply });
+        } catch (error) {
+          setErr(error.message || 'فشل استشارة المساعد.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="w-full lg:w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-r border-noir-800 flex-shrink-0">
+          <div className="h-14 px-4 border-b border-noir-800 bg-noir-900/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs">⚖️</div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-100">المستشار القانوني</h3>
+                <p className="text-[10px] text-sky-400 font-mono">النظام {legalSystem}</p>
+              </div>
+            </div>
+            <span className="text-[9px] font-mono bg-noir-850 px-2 py-0.5 rounded text-slate-400 border border-noir-800">ADVISOR</span>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+            {activeCase.assistantChat?.map(m => (
+              <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                <span className={`text-[10px] font-mono mb-1 ${m.sender === 'user' ? 'text-red-400' : 'text-sky-400'}`}>
+                  {m.sender === 'user' ? 'المحقق' : 'المستشار'} • {m.timestamp}
+                </span>
+                <div className={`p-3 rounded-xl text-xs leading-relaxed whitespace-pre-line border max-w-[92%] ${
+                  m.sender === 'user' ? 'bg-red-950/30 border-red-500/30 text-slate-200' : 'bg-noir-900 border-noir-800 text-slate-300 shadow-sm'
+                }`}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {loading && <div className="text-xs text-sky-400 p-2 bg-noir-900 rounded border border-noir-800 animate-pulse">جاري تحليل الأقوال والثغرات...</div>}
+            {err && <div className="text-xs text-red-400 p-2 bg-red-950/40 rounded border border-red-600/40">{err}</div>}
+            <div ref={endRef} />
+          </div>
+
+          <div className="p-2 border-t border-noir-850 bg-noir-900/70 space-y-1">
+            <button
+              onClick={() => handleAsk('حلل أقوال المشتبه بهم واستخرج التناقضات الزمنية أو المكانية.')}
+              disabled={loading}
+              className="w-full text-right text-[11px] p-1.5 rounded bg-noir-850 hover:bg-noir-800 text-slate-300 border border-noir-800 truncate"
+            >
+              🔍 فحص التناقضات بين الأقوال
+            </button>
+            <button
+              onClick={() => handleAsk(`ما مدى مشروعية الأدلة وفق النظام ${legalSystem}؟`)}
+              disabled={loading}
+              className="w-full text-right text-[11px] p-1.5 rounded bg-noir-850 hover:bg-noir-800 text-slate-300 border border-noir-800 truncate"
+            >
+              🛡️ فحص الإجراءات والقانونية
+            </button>
+          </div>
+
+          <div className="p-3 border-t border-noir-800 bg-noir-950">
+            <form onSubmit={(e) => { e.preventDefault(); handleAsk(); }} className="flex gap-2">
+              <input
+                type="text"
+                value={inputQ}
+                onChange={(e) => setInputQ(e.target.value)}
+                placeholder="اسأل المستشار..."
+                disabled={loading}
+                className="flex-1 px-3 py-2 rounded-lg bg-noir-900 border border-noir-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+              />
+              <button type="submit" disabled={loading || !inputQ.trim()} className="px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs disabled:opacity-40">
+                إرسال
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    function DossierAndNotes() {
+      const { activeCase, notepadContent, setNotepadContent } = useCaseStore();
+      const [tab, setTab] = useState('evidence');
+      const [copied, setCopied] = useState(false);
+      const [confirmClear, setConfirmClear] = useState(false);
+
+      if (!activeCase) return null;
+
+      const dossier = activeCase.dossier || {};
+      const evidence = activeCase.evidenceList || [];
+      const suspects = dossier.suspects || [];
+
+      return (
+        <div className="w-full lg:w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-l border-noir-800 flex-shrink-0">
+          <div className="h-[45%] flex flex-col border-b border-noir-800 bg-noir-900/50">
+            <div className="h-11 px-3 border-b border-noir-800 flex items-center justify-between bg-noir-900/90">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <h3 className="text-xs font-bold text-slate-200">دفتر ملاحظات المحقق</h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] font-mono text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/30">حفظ تلقائي ✓</span>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(notepadContent); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+                  className="p-1 rounded text-slate-400 hover:text-white text-xs"
+                >
+                  {copied ? '✓' : '📋'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (!confirmClear) { setConfirmClear(true); setTimeout(() => setConfirmClear(false), 2500); return; }
+                    setNotepadContent(''); setConfirmClear(false);
+                  }}
+                  className={`p-1 rounded text-xs ${confirmClear ? 'bg-red-600/30 text-red-300 px-1.5' : 'text-slate-400 hover:text-red-400'}`}
+                >
+                  {confirmClear ? 'تأكيد؟' : '🗑️'}
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 p-2.5">
+              <textarea
+                value={notepadContent}
+                onChange={(e) => setNotepadContent(e.target.value)}
+                placeholder="دوّن استنتاجاتك، التناقضات، وفرضياتك الحرة هنا... تُحفظ الملاحظات تلقائياً حتى عند إغلاق المتصفح."
+                className="w-full h-full p-2 bg-noir-950/80 border border-noir-800 rounded text-xs leading-relaxed text-amber-100 placeholder-slate-600 focus:outline-none focus:border-amber-500/50 resize-none font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="h-[55%] flex flex-col bg-noir-950">
+            <div className="h-11 px-2 border-b border-noir-800 bg-noir-900/80 flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setTab('evidence')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded transition ${tab === 'evidence' ? 'bg-red-600/20 text-red-400 border border-red-500/40' : 'text-slate-400'}`}
+                >
+                  الأدلة ({evidence.length})
+                </button>
+                <button
+                  onClick={() => setTab('suspects')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded transition ${tab === 'suspects' ? 'bg-red-600/20 text-red-400 border border-red-500/40' : 'text-slate-400'}`}
+                >
+                  المشتبه بهم ({suspects.length})
+                </button>
+                <button
+                  onClick={() => setTab('overview')}
+                  className={`px-2.5 py-1 text-xs font-bold rounded transition ${tab === 'overview' ? 'bg-red-600/20 text-red-400 border border-red-500/40' : 'text-slate-400'}`}
+                >
+                  البلاغ
+                </button>
+              </div>
+              <span className="text-[9px] font-mono text-slate-500 uppercase px-1">DOSSIER</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+              {tab === 'evidence' && (
+                evidence.length === 0 ? (
+                  <div className="text-center text-slate-600 text-xs py-8">لم يتم تحريز أي أدلة بعد.</div>
+                ) : (
+                  evidence.map((ev, i) => (
+                    <div key={ev.id || i} className="p-2.5 rounded bg-noir-900 border border-noir-800 space-y-1">
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-200">
+                        <span>🏷️ {ev.name}</span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-noir-850 text-red-400 border border-red-950">{ev.type}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">{ev.description}</p>
+                    </div>
+                  ))
+                )
+              )}
+
+              {tab === 'suspects' && (
+                suspects.length === 0 ? (
+                  <div className="text-center text-slate-600 text-xs py-8">لا يوجد مشتبه بهم مسجلين.</div>
+                ) : (
+                  suspects.map((s, i) => (
+                    <div key={s.id || i} className="p-2.5 rounded bg-noir-900 border border-noir-800 space-y-1">
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-100">
+                        <span>👤 {s.name}</span>
+                        <span className="text-[10px] text-amber-400 font-mono">{s.role}</span>
+                      </div>
+                      {s.alibi && <div className="text-[11px] text-slate-400 bg-noir-950 p-1.5 rounded border border-noir-850">حجة الغياب: {s.alibi}</div>}
+                    </div>
+                  ))
+                )
+              )}
+
+              {tab === 'overview' && (
+                <div className="space-y-2 text-xs">
+                  <div className="p-2.5 rounded bg-noir-900 border border-noir-800 space-y-1.5 font-mono text-[11px]">
+                    <div><span className="text-slate-500">الضحية:</span> <strong className="text-slate-200">{dossier.victimName}</strong></div>
+                    <div><span className="text-slate-500">العمر والصفة:</span> {dossier.victimAge} ({dossier.victimOccupation})</div>
+                    <div><span className="text-slate-500">المسرح:</span> {dossier.crimeSceneLocation}</div>
+                    <div><span className="text-slate-500">التوقيت:</span> {dossier.timeOfIncident}</div>
+                  </div>
+                  {activeCase.briefingSummary && (
+                    <div className="p-2.5 rounded bg-noir-900 border border-noir-800 text-[11px] text-slate-300 leading-relaxed">
+                      <span className="font-bold text-slate-400 block mb-1">نص البلاغ الأولي:</span>
+                      {activeCase.briefingSummary}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function InvestigationChat() {
+      const {
+        activeCase, apiKey, selectedModel,
+        addInvestigationMessage, addDiscoveredEvidence,
+        closeCaseWithIndictment, getDecryptedSolution
+      } = useCaseStore();
+
+      const [inputMsg, setInputMsg] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [err, setErr] = useState('');
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [accused, setAccused] = useState('');
+      const [motive, setMotive] = useState('');
+      const [weapon, setWeapon] = useState('');
+      const [evidenceArg, setEvidenceArg] = useState('');
+      const [submittingIndictment, setSubmittingIndictment] = useState(false);
+
+      const endRef = useRef(null);
+
+      useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, [activeCase?.investigationChat, loading]);
+
+      if (!activeCase) return null;
+
+      const secret = getDecryptedSolution(activeCase) || {};
+
+      const handleSend = async (customText = null) => {
+        const text = typeof customText === 'string' ? customText.trim() : inputMsg.trim();
+        if (!text || loading) return;
+        if (!apiKey) {
+          setErr('يجب إدخال مفتاح Gemini API في الإعدادات للمتابعة.');
+          return;
+        }
+
+        setErr('');
+        setInputMsg('');
+        addInvestigationMessage(activeCase.id, { sender: 'user', text });
+        setLoading(true);
+
+        try {
+          const prompt = SYSTEM_PROMPTS.investigationMaster({
+            caseData: activeCase,
+            secretSolution: secret,
+            legalSystem: activeCase.parameters.legalSystem,
+          });
+
+          const res = await sendInvestigationMessageApi({
+            apiKey,
+            model: selectedModel,
+            systemPrompt: prompt,
+            history: activeCase.investigationChat,
+            userMessage: text,
+          });
+
+          addInvestigationMessage(activeCase.id, { sender: 'game_master', text: res.reply });
+          if (res.newEvidence?.length) {
+            addDiscoveredEvidence(activeCase.id, res.newEvidence);
+          }
+        } catch (error) {
+          setErr(error.message || 'فشل الاتصال بمحرك التحقيق.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleIndictment = async (e) => {
+        e.preventDefault();
+        if (!accused || !motive) return;
+        setSubmittingIndictment(true);
+
+        const narrative = `[لائحة الاتهام الرسمية]:\nالمتهم: ${accused}\nالدافع: ${motive}\nالأداة: ${weapon || 'غير محدد'}\nالدليل الحاسم: ${evidenceArg || 'سجل الأدلة المادية'}`;
+        addInvestigationMessage(activeCase.id, { sender: 'user', text: narrative });
+
+        try {
+          const evalPrompt = `
+المحقق أغلق القضية وقدم لائحة الاتهام:
+${narrative}
+
+الحل السري الواقعي:
+الجاني: ${secret.culpritName}
+الدافع: ${secret.motive}
+الأداة: ${secret.weaponOrMethod}
+الدليل الحاسم: ${secret.keyEvidence}
+ثغرة الغياب: ${secret.flawInAlibi}
+الرواية الكاملة: ${secret.fullNarrative}
+
+المطلوب:
+1. إصدار حكم المحكمة النهائي بناء على صحة اتهام المحقق وأدلته وفق النظام ${activeCase.parameters.legalSystem}.
+2. كشف الرواية الحقيقية الكاملة لما حدث خلف الكواليس بدقة وسرد بوليسي ممتع.
+`;
+          const res = await sendInvestigationMessageApi({
+            apiKey,
+            model: selectedModel,
+            systemPrompt: SYSTEM_PROMPTS.investigationMaster({
+              caseData: activeCase,
+              secretSolution: secret,
+              legalSystem: activeCase.parameters.legalSystem,
+            }),
+            history: activeCase.investigationChat,
+            userMessage: evalPrompt,
+          });
+
+          addInvestigationMessage(activeCase.id, { sender: 'game_master', text: res.reply });
+          closeCaseWithIndictment(activeCase.id, { accused, verdictText: res.reply, realSolution: secret });
+          setIsModalOpen(false);
+        } catch (error) {
+          setErr(error.message || 'فشل مداولة لائحة الاتهام.');
+        } finally {
+          setSubmittingIndictment(false);
+        }
+      };
+
+      return (
+        <div className="flex-1 h-full min-w-0 flex flex-col bg-noir-900 border-x-0 lg:border-x border-noir-800">
+          <div className="h-14 px-4 border-b border-noir-800 bg-noir-950/80 flex items-center justify-between">
+            <div className="truncate">
+              <h2 className="text-xs sm:text-sm font-bold text-slate-100 truncate">{activeCase.title}</h2>
+              <p className="text-[10px] text-slate-400 font-mono truncate">المسرح: {activeCase.dossier?.crimeSceneLocation} • نظام {activeCase.parameters?.legalSystem}</p>
+            </div>
+            <div>
+              {activeCase.isSolved ? (
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-500/40 px-3 py-1 rounded-full">✓ القضية مغلقة</span>
+              ) : (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="text-xs font-bold bg-red-600/20 hover:bg-red-600/30 border border-red-500/50 text-red-300 px-3 py-1.5 rounded-lg transition"
+                >
+                  ⚖️ تقديم لائحة الاتهام
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+            {activeCase.investigationChat.map(m => (
+              <div key={m.id} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                <span className={`text-[10px] font-mono mb-1 ${m.sender === 'user' ? 'text-red-400' : 'text-slate-400'}`}>
+                  {m.sender === 'user' ? 'المحقق' : 'إدارة المسرح والاستجواب'} • {m.timestamp}
+                </span>
+                <div className={`p-3.5 rounded-xl text-xs sm:text-sm leading-relaxed whitespace-pre-line border max-w-[90%] sm:max-w-[80%] ${
+                  m.sender === 'user' ? 'bg-red-950/30 border-red-500/40 text-slate-100' : 'bg-noir-850 border-noir-800 text-slate-200 shadow-md'
+                }`}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {loading && <div className="text-xs text-red-400 p-2.5 bg-noir-850 rounded border border-noir-800 animate-pulse">جاري التحري واستجواب الأطراف...</div>}
+            {err && <div className="text-xs text-red-300 p-2.5 bg-red-950/50 rounded border border-red-600/40">{err}</div>}
+            <div ref={endRef} />
+          </div>
+
+          {!activeCase.isSolved && (
+            <div className="px-3 py-2 border-t border-noir-800 bg-noir-950/50 flex gap-2 overflow-x-auto text-xs no-scrollbar">
+              <button onClick={() => handleSend('أريد فحص مسرح الجريمة بحثاً عن آثار أقدام، بصمات، أو دلائل مادية جديدة.')} disabled={loading} className="px-2.5 py-1.5 rounded bg-noir-850 hover:bg-noir-800 border border-noir-800 text-slate-300 flex-shrink-0">
+                🔍 مسح المسرح
+              </button>
+              <button onClick={() => handleSend('اطلب تقرير الطب الشرعي المفصل حول وقت وطريقة الوفاة بدقة.')} disabled={loading} className="px-2.5 py-1.5 rounded bg-noir-850 hover:bg-noir-800 border border-noir-800 text-slate-300 flex-shrink-0">
+                🩺 تقرير الطب الشرعي
+              </button>
+              {activeCase.dossier?.suspects?.map(s => (
+                <button key={s.id} onClick={() => handleSend(`استدعِ المشتبه به "${s.name}" واستجوبه حول مكان تواجده وعلاقته بالحادثة.`)} disabled={loading} className="px-2.5 py-1.5 rounded bg-noir-850 hover:bg-noir-800 border border-noir-800 text-amber-300 flex-shrink-0">
+                  👤 استجواب {s.name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="p-3 border-t border-noir-800 bg-noir-950">
+            {activeCase.isSolved ? (
+              <div className="p-2 text-center text-xs text-slate-400 bg-noir-900 rounded border border-noir-800">تم إغلاق ملف القضية وصدور الحكم النهائي.</div>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputMsg}
+                  onChange={(e) => setInputMsg(e.target.value)}
+                  placeholder="وجه سؤالاً، استدعِ شاهداً، أو اطلب إجراءً جنائياً..."
+                  disabled={loading}
+                  className="flex-1 px-3.5 py-2.5 rounded-lg bg-noir-850 border border-noir-800 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500"
+                />
+                <button type="submit" disabled={loading || !inputMsg.trim()} className="px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs disabled:opacity-40">
+                  إرسال
+                </button>
+              </form>
+            )}
+          </div>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+              <div className="w-full max-w-lg bg-noir-900 border border-red-500/40 rounded-xl shadow-2xl p-5 space-y-4">
+                <div className="flex justify-between items-center border-b border-noir-800 pb-2">
+                  <h3 className="text-sm font-bold text-white">⚖️ تقديم لائحة الاتهام الرسمية</h3>
+                  <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+                </div>
+                <form onSubmit={handleIndictment} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">المتهم المدان:</label>
+                    <select value={accused} onChange={(e) => setAccused(e.target.value)} required className="w-full p-2 bg-noir-850 border border-noir-800 rounded text-slate-100 focus:outline-none focus:border-red-500">
+                      <option value="">-- اختر المتهم --</option>
+                      {activeCase.dossier?.suspects?.map(s => <option key={s.id} value={s.name}>{s.name} ({s.role})</option>)}
+                      <option value="طرف آخر غير مذكور">طرف آخر غير مذكور في القائمة الأولية</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">الدافع الجنائي:</label>
+                    <textarea value={motive} onChange={(e) => setMotive(e.target.value)} required rows="2" placeholder="اشرح الدافع..." className="w-full p-2 bg-noir-850 border border-noir-800 rounded text-slate-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">أداة الجريمة / الأسلوب:</label>
+                    <input type="text" value={weapon} onChange={(e) => setWeapon(e.target.value)} placeholder="مثال: سم، سلاح أبيض، تزييف حادث..." className="w-full p-2 bg-noir-850 border border-noir-800 rounded text-slate-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-300 mb-1">الدليل الحاسم الذي يدحض حجة الغياب:</label>
+                    <textarea value={evidenceArg} onChange={(e) => setEvidenceArg(e.target.value)} rows="2" placeholder="الدليل القاطع المقدم للمحكمة..." className="w-full p-2 bg-noir-850 border border-noir-800 rounded text-slate-100 focus:outline-none focus:border-red-500" />
+                  </div>
+                  <div className="pt-2 flex justify-end gap-2 border-t border-noir-800">
+                    <button type="button" onClick={() => setIsModalOpen(false)} className="px-3 py-1.5 rounded text-slate-400 hover:text-white">إلغاء</button>
+                    <button type="submit" disabled={submittingIndictment} className="px-4 py-2 rounded bg-red-600 hover:bg-red-500 text-white font-bold">
+                      {submittingIndictment ? 'جاري المداولة...' : 'إحالة للمحكمة وإصدار الحكم'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    function NewCaseModal() {
+      const { isNewCaseModalOpen, setIsNewCaseModalOpen, apiKey, selectedModel, createCase, setIsSettingsModalOpen } = useCaseStore();
+      const [difficulty, setDifficulty] = useState('متوسط');
+      const [legalSystem, setLegalSystem] = useState('السعودي');
+      const [depth, setDepth] = useState('متوسط');
+      const [customSeed, setCustomSeed] = useState('');
+      const [draft, setDraft] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      if (!isNewCaseModalOpen) return null;
+
+      const handleGenerate = async () => {
+        if (!apiKey) {
+          setError('يرجى ضبط مفتاح Gemini API في الإعدادات أولاً.');
+          return;
+        }
+        setLoading(true);
+        setError('');
+        setDraft(null);
+
+        try {
+          const prompt = SYSTEM_PROMPTS.caseGenerator({ difficulty, legalSystem, depth });
+          const res = await generateNewCaseApi({ apiKey, model: selectedModel, systemPrompt: prompt, customSeed });
+          setDraft(res);
+        } catch (err) {
+          setError(err.message || 'حدث خطأ أثناء صياغة القضية.');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      const handleAccept = () => {
+        if (!draft) return;
+        createCase(draft, { difficulty, legalSystem, depth });
+        setDraft(null);
+        setIsNewCaseModalOpen(false);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+          <div className="w-full max-w-3xl max-h-[92dvh] flex flex-col bg-noir-900 border border-noir-800 rounded-xl shadow-2xl overflow-hidden">
+            <div className="px-5 py-3.5 border-b border-noir-800 bg-noir-950/80 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>📁 فتح ملف قضية جنائية جديدة</span>
+              </h2>
+              <button onClick={() => setIsNewCaseModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+              {!apiKey && (
+                <div className="p-3 bg-amber-950/40 border border-amber-500/40 rounded text-amber-300 flex justify-between items-center">
+                  <span>مفتاح Gemini API غير مسجل بعد.</span>
+                  <button onClick={() => { setIsNewCaseModalOpen(false); setIsSettingsModalOpen(true); }} className="underline font-bold">إدخال المفتاح ←</button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">1. النظام القانوني:</label>
+                  <div className="space-y-1.5">
+                    {['السعودي', 'الأمريكي'].map(sys => (
+                      <button
+                        key={sys}
+                        type="button"
+                        onClick={() => setLegalSystem(sys)}
+                        className={`w-full p-2.5 rounded border text-right ${legalSystem === sys ? 'bg-red-950/40 border-red-500 text-white font-bold' : 'bg-noir-850 border-noir-800 text-slate-400'}`}
+                      >
+                        النظام القضائي {sys}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-300 mb-1">2. طول القضية والتشعب:</label>
+                  <div className="space-y-1.5">
+                    {['قصير', 'متوسط', 'طويل'].map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDepth(d)}
+                        className={`w-full p-2.5 rounded border text-right ${depth === d ? 'bg-red-950/40 border-red-500 text-white font-bold' : 'bg-noir-850 border-noir-800 text-slate-400'}`}
+                      >
+                        {d} ({d === 'قصير' ? 'أدلة مباشرة' : d === 'متوسط' ? 'استجواب متوازن' : 'خيوط متشعبة'})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">3. مستوى الصعوبة:</label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {['سهل', 'متوسط', 'صعب', 'صعب جداً', 'مستوى دولة'].map(diff => (
+                    <button
+                      key={diff}
+                      type="button"
+                      onClick={() => setDifficulty(diff)}
+                      className={`p-2 rounded border text-center ${difficulty === diff ? 'bg-red-950/40 border-red-500 text-white font-bold' : 'bg-noir-850 border-noir-800 text-slate-400'}`}
+                    >
+                      {diff}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">4. فكرة مخصصة للمسرح (اختياري):</label>
+                <input
+                  type="text"
+                  value={customSeed}
+                  onChange={(e) => setCustomSeed(e.target.value)}
+                  placeholder="مثال: جريمة في يخت مغلق وسط البحر، أو سرقة لوحة نادرة من متحف..."
+                  className="w-full p-2.5 bg-noir-850 border border-noir-800 rounded text-slate-100 placeholder-slate-500 focus:outline-none focus:border-red-500"
+                />
+              </div>
+
+              {error && <div className="p-2.5 bg-red-950/50 border border-red-600/40 rounded text-red-300">{error}</div>}
+
+              {draft && (
+                <div className="p-4 rounded-xl bg-noir-950 border border-amber-500/40 space-y-3">
+                  <div className="flex justify-between items-center border-b border-noir-800 pb-2">
+                    <span className="font-bold text-amber-400">📄 ملخص البلاغ التمهيدي للقضية</span>
+                    <span className="font-mono text-slate-300">{draft.title}</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-noir-900 p-2 rounded border border-noir-800 font-mono text-[11px]">
+                    <div>الضحية: <strong className="text-slate-200">{draft.dossier?.victimName}</strong></div>
+                    <div>الموقع: <span className="text-slate-300">{draft.dossier?.crimeSceneLocation}</span></div>
+                    <div>التوقيت: <span className="text-slate-300">{draft.dossier?.timeOfIncident}</span></div>
+                  </div>
+                  <div className="p-3 bg-noir-900/70 rounded text-slate-300 leading-relaxed">
+                    {draft.briefingSummary}
+                  </div>
+                  <div className="pt-2 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-noir-800">
+                    <span className="text-slate-400">هل توافق على استلام هذا الملف أم تفضل توليد آخر؟</span>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button onClick={handleGenerate} disabled={loading} className="flex-1 sm:flex-none px-3 py-2 rounded border border-red-500/40 text-red-400 hover:bg-red-950/30">
+                        {loading ? 'جاري الصياغة...' : 'رفض وإعادة التوليد ↻'}
+                      </button>
+                      <button onClick={handleAccept} className="flex-1 sm:flex-none px-4 py-2 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">
+                        قبول وبدء التحقيق ✓
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {!draft && (
+              <div className="p-4 border-t border-noir-800 bg-noir-950/80 flex justify-end gap-2">
+                <button onClick={() => setIsNewCaseModalOpen(false)} className="px-4 py-2 rounded text-slate-400 hover:text-white text-xs">إلغاء</button>
+                <button onClick={handleGenerate} disabled={loading || !apiKey} className="px-5 py-2.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-bold disabled:opacity-40">
+                  {loading ? 'جاري صياغة القضية...' : 'صياغة ملخص القضية ←'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function MainWorkspace() {
+      const { activeCase, setIsNewCaseModalOpen, setIsSidebarOpen } = useCaseStore();
+      const [mobileTab, setMobileTab] = useState('investigation');
+
+      return (
+        <div className="flex h-screen h-[100dvh] w-screen overflow-hidden bg-noir-950 text-slate-200">
+          <Sidebar />
+
+          <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+            <header className="lg:hidden flex items-center justify-between border-b border-noir-800 bg-noir-900 px-3 py-2 z-30 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsSidebarOpen(true)}
+                  className="p-2 rounded bg-noir-850 text-slate-300 border border-noir-800"
+                >
+                  ☰
+                </button>
+                <div className="truncate max-w-[180px]">
+                  <h2 className="text-xs font-bold text-slate-100 truncate">{activeCase ? activeCase.title : 'CaseMaster AI'}</h2>
+                  {activeCase && <span className="text-[10px] text-red-400 font-mono">نظام {activeCase.parameters?.legalSystem}</span>}
+                </div>
+              </div>
+              <button
+                onClick={() => setIsNewCaseModalOpen(true)}
+                className="text-xs font-bold bg-red-600/20 border border-red-500/40 text-red-300 px-2.5 py-1 rounded"
+              >
+                + قضية
+              </button>
+            </header>
+
+            {!activeCase ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-noir-900/40">
+                <div className="max-w-md w-full p-8 rounded-2xl bg-noir-900 border border-noir-800 shadow-2xl space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-red-600/10 border border-red-500/30 flex items-center justify-center text-3xl">
+                    ⚖️
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-100">مرحباً بك في CaseMaster AI</h2>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    محاكي التحقيق الجنائي التفاعلي بنماذج Google Gemini. اختر معايير القضية، عاين مسرح الجريمة، استجوب المشتبه بهم، واستشر المساعد القانوني لفك اللغز.
+                  </p>
+                  <div className="pt-2">
+                    <button
+                      onClick={() => setIsNewCaseModalOpen(true)}
+                      className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg transition"
+                    >
+                      فتح ملف قضية جديدة ←
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col lg:flex-row h-full min-h-0 overflow-hidden">
+                <div className="hidden lg:flex flex-1 h-full min-w-0 overflow-hidden">
+                  <AssistantChat />
+                  <InvestigationChat />
+                  <DossierAndNotes />
+                </div>
+
+                <div className="lg:hidden flex-1 h-full min-h-0 overflow-hidden flex flex-col">
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    {mobileTab === 'investigation' && <InvestigationChat />}
+                    {mobileTab === 'assistant' && <AssistantChat />}
+                    {mobileTab === 'dossier' && <DossierAndNotes />}
+                  </div>
+
+                  <nav className="border-t border-noir-800 bg-noir-900 px-2 py-1.5 flex items-center justify-around z-20 flex-shrink-0">
+                    <button
+                      onClick={() => setMobileTab('investigation')}
+                      className={`flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${mobileTab === 'investigation' ? 'bg-red-600/20 text-red-400 border border-red-500/40' : 'text-slate-400'}`}
+                    >
+                      <span className="text-sm">🔍</span>
+                      <span>المسرح</span>
+                    </button>
+                    <button
+                      onClick={() => setMobileTab('assistant')}
+                      className={`flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${mobileTab === 'assistant' ? 'bg-sky-600/20 text-sky-400 border border-sky-500/40' : 'text-slate-400'}`}
+                    >
+                      <span className="text-sm">⚖️</span>
+                      <span>المستشار</span>
+                    </button>
+                    <button
+                      onClick={() => setMobileTab('dossier')}
+                      className={`flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${mobileTab === 'dossier' ? 'bg-amber-600/20 text-amber-400 border border-amber-500/40' : 'text-slate-400'}`}
+                    >
+                      <span className="text-sm">📁</span>
+                      <span>الأدلة والملاحظات</span>
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <NewCaseModal />
+        </div>
+      );
+    }
+
+    function App() {
+      return (
+        <CaseProvider>
+          <MainWorkspace />
+        </CaseProvider>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
-```
