@@ -1,4 +1,4 @@
-```react
+// src/components/AssistantChat.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { useCaseStore } from '../useCaseStore';
 import { askLegalAssistant } from '../api';
@@ -98,7 +98,7 @@ export default function AssistantChat() {
   };
 
   return (
-    <div className="w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-r border-noir-800 flex-shrink-0">
+    <div className="w-full lg:w-80 xl:w-96 h-full flex flex-col bg-noir-950 border-r border-noir-800 flex-shrink-0">
       
       {/* Top Header */}
       <div className="h-14 px-4 border-b border-noir-800 bg-noir-900/70 backdrop-blur flex items-center justify-between">
@@ -223,12 +223,12 @@ export default function AssistantChat() {
             onChange={(e) => setInputQuestion(e.target.value)}
             placeholder="اسأل المستشار عن ثغرة أو رأي قانوني..."
             disabled={isLoading}
-            className="flex-1 px-3 py-2 rounded-lg bg-noir-900 border border-noir-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition disabled:opacity-50"
+            className="flex-1 px-3 py-2.5 rounded-lg bg-noir-900 border border-noir-800 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 transition disabled:opacity-50 min-h-[42px]"
           />
           <button
             type="submit"
             disabled={isLoading || !inputQuestion.trim()}
-            className="px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition disabled:opacity-40 flex items-center justify-center"
+            className="px-3.5 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition disabled:opacity-40 flex items-center justify-center min-h-[42px] min-w-[42px]"
             title="إرسال السؤال"
           >
             <svg className="w-3.5 h-3.5 rtl:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,4 +241,3 @@ export default function AssistantChat() {
     </div>
   );
 }
-```
