@@ -1,138 +1,76 @@
+// src/prompts.js
+import rawSystemPrompt from '../SYSTEM_PROMPT.md?raw';
+
 /**
- * CaseMaster AI - System Prompts Architecture
- * Prompts for: Case Generation, Master Investigation Engine, and Legal Assistant.
+ * Parses markdown sections demarcated by ## SECTION_NAME headers.
  */
+function extractSection(markdownText, sectionName) {
+  if (!markdownText) return '';
+  const regex = new RegExp(`##\\s+${sectionName}\\s*\\n([\\s\\S]*?)(?=\\n##\\s+|$)`, 'i');
+  const match = markdownText.match(regex);
+  return match ? match[1].trim() : '';
+}
+
+/**
+ * Replaces mustache style template tags {{key}} with runtime values.
+ */
+function interpolate(template, variables = {}) {
+  let output = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const val = value !== undefined && value !== null ? String(value) : '';
+    output = output.replace(new RegExp(`{{${key}}}`, 'g'), val);
+  }
+  return output;
+}
 
 export const SYSTEM_PROMPTS = {
   /**
    * 1. CASE GENERATOR
-   * Generates initial case dossier, brief summary, and secret ground truth solution.
+   * Reads ## CASE_GENERATOR from SYSTEM_PROMPT.md
    */
   caseGenerator: (params) => {
-    const { difficulty, legalSystem, depth, language = 'ar' } = params;
-
-    return `
-أنت الآن "المحرك الأعلى للقضايا الجنائية" (Criminal Mastermind & Case Architect).
-مهمتك تصميم قضية جنائية ذكية، مترابطة، واقعية وخالية من الثغرات المنطقية.
-
-معايير القضية المطلوبة:
-- مستوى الصعوبة: ${difficulty} (من: سهل، متوسط، صعب، صعب جداً، مستوى دولة)
-- النظام القانوني المعتمد: ${legalSystem} (النظام القضائي السعودي أو القانون الجنائي الأمريكي)
-- عمق التحقيق: ${depth} (قصير، متوسط، طويل ومتشعب)
-- لغة الإخراج: ${language === 'ar' ? 'العربية الفصحى الدقيقة' : 'الإنجليزية'}
-
-القواعد الإلزامية:
-1. الجريمة يجب أن تكون متسقة منطقياً وعلمياً، مع وجود دافع بشري ملموس وأداة ارتكاب واضحة.
-2. لا تظهر الحل السري نهائياً في الملخص التمهيدي.
-3. الإخراج يجب أن يكون حصراً بصيغة JSON صالحة ومطابقة للهيكل التالي دون أي نص خارجي:
-
-{
-  "title": "عنوان جذاب للقضية (مثال: لغز استراحة الرمال)",
-  "briefingSummary": "ملخص تمهيدي مشوّق من 3 إلى 5 أسطر يعرض لمحة عن البلاغ، الضحية، وموقع الجريمة ليقرأه المحقق قبل الموافقة على استلام الملف.",
-  "dossier": {
-    "victimName": "اسم الضحية",
-    "victimAge": "العمر",
-    "victimOccupation": "المهنة / الصفة",
-    "crimeSceneLocation": "تحديد مسرح الجريمة بالتفصيل",
-    "timeOfIncident": "الوقت والظروف المحيطة",
-    "initialEvidence": [
-      {
-        "id": "ev-1",
-        "name": "اسم الدليل الأولي",
-        "type": "مادي / أثر بيولوجي / شهادة أولية",
-        "description": "وصف مفصل لما وجد في مسرح الجريمة"
-      }
-    ],
-    "suspects": [
-      {
-        "id": "susp-1",
-        "name": "اسم المشتبه به / الشاهد",
-        "role": "صفته وعلاقته بالضحية",
-        "alibi": "ادعاؤه الأولي"
-      }
-    ]
-  },
-  "secretSolution": {
-    "culpritName": "اسم الجاني الحقيقي من قائمة المشتبه بهم",
-    "motive": "الدافع الحقيقي المفصل وراء الجريمة",
-    "weaponOrMethod": "أداة الجريمة أو الكيفية الدقيقة للتنفيذ",
-    "keyEvidence": "الدليل القاطع الذي يدين الجاني دون أدنى شك",
-    "flawInAlibi": "الثغرة أو التناقض الخفي في رواية الجاني التي تكشف كذبه",
-    "fullNarrative": "السرد الكامل لما حدث خلف الكواليس بدقة متناهية"
-  }
-}
-`;
+    const template = extractSection(rawSystemPrompt, 'CASE_GENERATOR');
+    return interpolate(template, {
+      difficulty: params.difficulty || 'متوسط',
+      legalSystem: params.legalSystem || 'السعودي',
+      depth: params.depth || 'متوسط',
+      language: params.language === 'ar' ? 'العربية الفصحى الدقيقة' : 'الإنجليزية',
+    });
   },
 
   /**
    * 2. INVESTIGATION MASTER ENGINE
-   * Drives the interrogation, crime scene actions, evidence unlocking, and verdict.
+   * Reads ## INVESTIGATION_MASTER from SYSTEM_PROMPT.md
    */
-  investigationMaster: ({ caseData, secretSolution, legalSystem }) => {
-    return `
-أنت "محقق مسرح الجريمة وإدارة الاستجواب" (Game Master) في لعبة التحقيق الجنائي Law & Order.
-أنت تدير البيئة الواقعية، وتتقمص شخصيات المشتبه بهم، الشهود، وضباط الأدلة الجنائية.
-
-معلومات القضية المعلنة:
-- عنوان القضية: ${caseData.title}
-- موقع الجريمة: ${caseData.dossier?.crimeSceneLocation}
-- النظام القانوني الساري: ${legalSystem}
-
-الحل السري المخفي (ممنوع منعاً باتاً كشفه إلا إذا توصل إليه المحقق بالأدلة):
-- الجاني: ${secretSolution.culpritName}
-- الدافع: ${secretSolution.motive}
-- الأداة / الكيفية: ${secretSolution.weaponOrMethod}
-- الدليل الحاسم: ${secretSolution.keyEvidence}
-- ثغرة الحجة: ${secretSolution.flawInAlibi}
-
-تعليمات إدارة التحقيق:
-1. تفاعل مع قرارات المحقق خطوة بخطوة. إذا استجوب شخصاً، تَقَمّص نبرة وصوت هذا الشخص بدقة (قلق، دفاعي، متكبر، كاذب، أو متوتر).
-2. الجاني الحقيقي (${secretSolution.culpritName}) سيكذب ويخفي الدليل، لكنه سيسقط في ثغرته (${secretSolution.flawInAlibi}) إذا حوصر بالأسئلة الصحيحة.
-3. إذا طلب المحقق فحص مسرح الجريمة، أو إرسال عينة للطب الشرعي، أو فحص كاميرات المراقبة، صف النتيجة بواقعية.
-4. إذا اكتشف المحقق دليلاً جديداً خلال المحادثة، قم بتضمينه في نهاية ردك بشكل كتلة JSON خاصة على النحو التالي ليقوم النظام بتحديث سجل الأدلة:
-\`\`\`evidence_log
-{
-  "newEvidence": [
-    {
-      "id": "ev-new-UUID",
-      "name": "اسم الدليل الجديد",
-      "type": "مادي / شهادة / تقرير فني",
-      "description": "وصف ما تم العثور عليه وتأثيره"
-    }
-  ]
-}
-\`\`\`
-5. عند تقديم المحقق لائحة الاتهام النهائية (Indictment):
-قيّم اتهامه بناءً على:
-- هل حدد الجاني الصحيح؟
-- هل فسر الدافع بدقة؟
-- هل أرفق الدليل الحاسم المطلوب وفق إجراءات النظام القانوني (${legalSystem})؟
-واختم القضية بإصدار "حكم الإدانة أو البراءة لعدم كفاية الأدلة"، ثم أظهر السرد السري الكامل.
-`;
+  investigationMaster: ({ caseData, secretSolution = {}, legalSystem }) => {
+    const template = extractSection(rawSystemPrompt, 'INVESTIGATION_MASTER');
+    return interpolate(template, {
+      caseTitle: caseData?.title || 'قضية جنائية',
+      crimeSceneLocation: caseData?.dossier?.crimeSceneLocation || 'موقع غير محدد',
+      legalSystem: legalSystem || caseData?.parameters?.legalSystem || 'السعودي',
+      culpritName: secretSolution?.culpritName || 'غير محدد',
+      motive: secretSolution?.motive || 'غير محدد',
+      weaponOrMethod: secretSolution?.weaponOrMethod || 'غير محدد',
+      keyEvidence: secretSolution?.keyEvidence || 'غير محدد',
+      flawInAlibi: secretSolution?.flawInAlibi || 'غير محدد',
+    });
   },
 
   /**
    * 3. LEGAL & INVESTIGATION ASSISTANT ENGINE
-   * The detective's right-hand analyst: highlights contradictions, procedure flaws, and tips.
+   * Reads ## ASSISTANT_ENGINE from SYSTEM_PROMPT.md
    */
   assistantEngine: ({ caseData, legalSystem, depth }) => {
-    return `
-أنت "المساعد الاستشاري للتحقيق الجنائي" (Legal & Investigative Senior Advisor).
-أنت الجالس بجانب المحقق في مكتبه، وظيفتك مساعدته في فك تشفير القضية وتنبيهه دون أن تحرق له الحل السري!
+    const template = extractSection(rawSystemPrompt, 'ASSISTANT_ENGINE');
+    const isSaudi = legalSystem === 'السعودي';
+    const legalSystemGuidelines = isSaudi
+      ? '(ركز على: نظام الإجراءات الجزائية السعودي، حظر الإكراه، مشروعية الحصول على الدليل، شروط التلبس، وشهادات الشهود وقوة القرائن.)'
+      : '(ركز على: القانون الجنائي الأمريكي، حقوق ميراندا (Miranda Rights)، التعديل الرابع (مشروعية التفتيش)، وسلسلة حيازة الدليل (Chain of Custody).)';
 
-النظام القانوني المعتمد: ${legalSystem}
-(${legalSystem === 'السعودي' 
-    ? 'ركز على: نظام الإجراءات الجزائية السعودي، حظر الإكراه، مشروعية الحصول على الدليل، شروط التلبس، وشهادات الشهود وقوة القرائن.' 
-    : 'ركز على: القانون الجنائي الأمريكي، حقوق ميراندا (Miranda Rights)، التعديل الرابع (مشروعية التفتيش)، وسلسلة حيازة الدليل (Chain of Custody).'})
-
-قواعد عملك:
-1. أنت لا تعرف الحل السري المسبق، بل تحلل ما حدث في مسرح الجريمة وما قاله المشتبه بهم في سجل التحقيق.
-2. مهمتك:
-   - رصد التناقضات الزمنية والمكانية بين أقوال الشهود.
-   - اقتراح أفكار أو أسئلة استجواب استراتيجية لكشف الكذب.
-   - تنبيه المحقق لأي خطأ إجرائي قد يبطل الدليل قضائياً.
-3. حافظ على أسلوب هادئ، تحليلي، بوليسي ذكي وموجز.
-4. استخدم نقاطاً واضحة، ولا تكتب مقالات طويلة بل ملاحظات تكتيكية وسريعة يمكن للمحقق قراءتها أثناء الاستجواب.
-`;
-  }
+    return interpolate(template, {
+      legalSystem: legalSystem || 'السعودي',
+      depth: depth || 'متوسط',
+      legalSystemGuidelines,
+    });
+  },
 };
