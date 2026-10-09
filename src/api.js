@@ -1,3 +1,4 @@
+// src/api.js
 /**
  * CaseMaster AI - Gemini API Client Engine
  * Direct integration with Google Gemini REST API.
@@ -56,11 +57,11 @@ async function callGeminiApi({ apiKey, model = DEFAULT_MODEL, systemInstruction,
 
   const endpoint = `${BASE_API_URL}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
 
+  // Gemini 3.5 & 3.8 models deprecate custom temperature/top_p/top_k in generateContent
   const requestBody = {
     contents,
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 3072,
+      maxOutputTokens: 4096,
       ...generationConfig,
     },
   };
@@ -126,9 +127,6 @@ export async function generateNewCase({ apiKey, model, systemPrompt, customSeed 
     model,
     systemInstruction: systemPrompt,
     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-    generationConfig: {
-      temperature: 0.85,
-    },
   });
 
   return extractAndParseJSON(rawText);
@@ -139,32 +137,43 @@ export async function generateNewCase({ apiKey, model, systemPrompt, customSeed 
  */
 export async function sendInvestigationMessage({ apiKey, model, systemPrompt, history, userMessage }) {
   // Format history to Gemini multi-turn format: { role: 'user' | 'model', parts: [{ text }] }
-  const formattedContents = history.map((msg) => ({
-    role: msg.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.text }],
-  }));
+  const formattedContents = [];
+  
+  for (const msg of history) {
+    const role = msg.sender === 'user' ? 'user' : 'model';
+    // Ensure alternating turns: avoid consecutive messages from same role
+    if (formattedContents.length > 0 && formattedContents[formattedContents.length - 1].role === role) {
+      formattedContents[formattedContents.length - 1].parts[0].text += `\n\n${msg.text}`;
+    } else {
+      formattedContents.push({
+        role,
+        parts: [{ text: msg.text }],
+      });
+    }
+  }
 
-  // Append new user message
-  formattedContents.push({
-    role: 'user',
-    parts: [{ text: userMessage }],
-  });
+  // Append new user message with alternating guarantee
+  if (formattedContents.length > 0 && formattedContents[formattedContents.length - 1].role === 'user') {
+    formattedContents[formattedContents.length - 1].parts[0].text += `\n\n${userMessage}`;
+  } else {
+    formattedContents.push({
+      role: 'user',
+      parts: [{ text: userMessage }],
+    });
+  }
 
   const responseText = await callGeminiApi({
     apiKey,
     model,
     systemInstruction: systemPrompt,
     contents: formattedContents,
-    generationConfig: {
-      temperature: 0.7,
-    },
   });
 
   // Check if Game Master appended an ```evidence_log block
   let cleanedText = responseText;
   let newEvidenceItems = [];
 
-  const evidenceRegex = /```evidence_log\s*([\s\S]*?)\s*```/i;
+  const evidenceRegex = /```(?:evidence_log|json)?\s*(\{[\s\S]*?"newEvidence"[\s\S]*?\})\s*```/i;
   const match = responseText.match(evidenceRegex);
 
   if (match) {
@@ -187,7 +196,7 @@ export async function sendInvestigationMessage({ apiKey, model, systemPrompt, hi
 }
 
 /**
- * 3. Consults the Legal and Investigative Assistant without polluting main history.
+ * 3. Consults the Legal and Investigative Assistant without violating turn sequence.
  */
 export async function askLegalAssistant({ apiKey, model, systemPrompt, investigationContext, assistantHistory, question }) {
   const contextualPreamble = `
@@ -198,24 +207,36 @@ ${investigationContext || 'لا توجد استجوابات سابقة حتى ا
 ${question}
   `.trim();
 
-  const formattedContents = assistantHistory.map((msg) => ({
-    role: msg.sender === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.text }],
-  }));
+  // Assistant history without the pending user question to avoid duplicate user turns
+  const formattedContents = [];
 
-  formattedContents.push({
-    role: 'user',
-    parts: [{ text: contextualPreamble }],
-  });
+  for (const msg of assistantHistory) {
+    const role = msg.sender === 'user' ? 'user' : 'model';
+    if (formattedContents.length > 0 && formattedContents[formattedContents.length - 1].role === role) {
+      formattedContents[formattedContents.length - 1].parts[0].text += `\n\n${msg.text}`;
+    } else {
+      formattedContents.push({
+        role,
+        parts: [{ text: msg.text }],
+      });
+    }
+  }
+
+  // Append contextual preamble ensuring user role
+  if (formattedContents.length > 0 && formattedContents[formattedContents.length - 1].role === 'user') {
+    formattedContents[formattedContents.length - 1].parts[0].text = contextualPreamble;
+  } else {
+    formattedContents.push({
+      role: 'user',
+      parts: [{ text: contextualPreamble }],
+    });
+  }
 
   const reply = await callGeminiApi({
     apiKey,
     model,
     systemInstruction: systemPrompt,
     contents: formattedContents,
-    generationConfig: {
-      temperature: 0.6,
-    },
   });
 
   return { reply: reply.trim() };
