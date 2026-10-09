@@ -1,0 +1,114 @@
+```html
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CaseMaster AI | محاكي التحقيق الجنائي القانوني</title>
+  
+  <!-- Favicon & Identity -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg>" />
+
+  <!-- Google Fonts: Tajawal (Arabic UI) + IBM Plex Mono (Forensic / Dossier elements) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            noir: {
+              950: '#060709', // أسود حالك لمسرح الجريمة
+              900: '#0d0f12', // خلفية البطاقات الرئيسية
+              850: '#13161c', // الحاويات المتداخلة
+              800: '#1b2028', // حدود البطاقات والعناصر
+              700: '#28303d',
+              accent: '#dc2626', // أحمر جنائي للتنبيه والأدلة
+              amber: '#d97706',  // تحذيرات التحقيق
+              cyan: '#0ea5e9',   // شات المساعد الذكي
+              gold: '#ca8a04'    // أختام الملفات والقرارات القانونية
+            }
+          },
+          fontFamily: {
+            sans: ['Tajawal', 'sans-serif'],
+            mono: ['"IBM Plex Mono"', 'monospace']
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'scanline': 'scan 8s linear infinite',
+          },
+          keyframes: {
+            scan: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(1000%)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbars for Noir Theme */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d0f12;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #28303d;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #dc2626;
+    }
+
+    /* Selection Styling */
+    ::selection {
+      background-color: #dc2626;
+      color: #ffffff;
+    }
+
+    /* Forensic Scanline & Noise Effect Overlay */
+    .scanline-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      background-size: 100% 3px, 6px 100%;
+      opacity: 0.35;
+    }
+
+    /* Paper texture for notes */
+    .notepad-grid {
+      background-size: 100% 1.75rem;
+      background-image: linear-gradient(to bottom, transparent 95%, rgba(255, 255, 255, 0.05) 95%);
+      line-height: 1.75rem;
+    }
+  </style>
+</head>
+
+<body class="bg-noir-950 text-slate-200 font-sans antialiased selection:bg-noir-accent selection:text-white h-screen overflow-hidden">
+  <!-- Subtle CRT / Scanline filter for detective immersive vibe -->
+  <div class="scanline-overlay"></div>
+
+  <!-- React root container -->
+  <div id="root" class="h-full w-full"></div>
+
+  <!-- Entry Script for Vite / Modern JS Bundle -->
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
+```
