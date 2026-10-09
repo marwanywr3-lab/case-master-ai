@@ -53,14 +53,25 @@
     ::-webkit-scrollbar-track { background: #0d0f14; }
     ::-webkit-scrollbar-thumb { background: #242c3b; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #ef4444; }
+    #app { height: 100vh; height: 100dvh; }
+    #boot-warning { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: #7f1d1d; color: #fff; padding: 8px 12px; font-size: 12px; text-align: center; display: none; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-noir-950 text-slate-200 h-full w-full overflow-hidden">
+  <div id="boot-warning">تعذر تحميل Tailwind CSS (cdn.tailwindcss.com). تأكد من الإنترنت أو افتح الصفحة من متصفح آخر.</div>
   <div id="app" class="h-full w-full flex overflow-hidden relative"></div>
 
   <script>
+    function showFatal(err) {
+      const app = document.getElementById('app');
+      const msg = String((err && err.stack) || err);
+      if (app) app.innerHTML = '<pre style="color:#f87171;padding:16px;direction:ltr;white-space:pre-wrap;font-size:12px;overflow:auto;height:100%">' + msg.replace(/</g, '&lt;') + '</pre>';
+    }
+    window.addEventListener('error', e => showFatal(e.error || e.message));
+    window.addEventListener('unhandledrejection', e => showFatal(e.reason));
+
     // Safe Storage to prevent iframe SecurityError crashes
     const memoryStore = {};
     const safeStore = {
@@ -208,10 +219,16 @@
       }
     }
 
+    function authHeaders() {
+      const h = { 'Content-Type': 'application/json' };
+      if (state.apiKey) h['x-goog-api-key'] = state.apiKey.trim();
+      return h;
+    }
+
     async function callGemini(contents, systemInstruction) {
       const modelToUse = state.selectedModel || SUPPORTED_MODELS.LITE;
       // If user left API key empty, pass empty string so Canvas runtime handles it, or use provided key
-      const keyParam = state.apiKey ? `?key=${encodeURIComponent(state.apiKey.trim())}` : `?key=`;
+      const keyParam = '';
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelToUse)}:generateContent${keyParam}`;
       
       const body = {
@@ -226,7 +243,7 @@
       try {
         res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders(),
           body: JSON.stringify(body),
         });
       } catch (networkErr) {
@@ -241,7 +258,7 @@
           const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent${keyParam}`;
           const fallbackRes = await fetch(fallbackEndpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify(body),
           });
           const fallbackData = await fallbackRes.json().catch(() => ({}));
@@ -362,42 +379,34 @@
       bindEvents();
     }
 
-    function renderActiveCaseWorkspace(c) {
-      if (!c) return '';
-      return `
-        <div class="flex-1 flex flex-col lg:flex-row h-full min-h-0 overflow-hidden">
-          <!-- Desktop Three Columns Layout -->
-          <div class="hidden lg:flex flex-1 h-full min-w-0 overflow-hidden">
-            ${renderAssistantColumn(c)}
-            ${renderInvestigationColumn(c)}
-            ${renderDossierColumn(c)}
-          </div>
+    const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+    let lastDesktop = isDesktop();
+    window.addEventListener('resize', () => {
+      if (isDesktop() !== lastDesktop) { lastDesktop = isDesktop(); render(); }
+    });
 
-          <!-- Mobile & Tablet Dynamic Single-view Layout -->
-          <div class="lg:hidden flex-1 h-full min-h-0 overflow-hidden flex flex-col">
-            <div class="flex-1 min-h-0 overflow-hidden">
-              ${state.mobileTab === 'investigation' ? renderInvestigationColumn(c) : ''}
-              ${state.mobileTab === 'assistant' ? renderAssistantColumn(c) : ''}
-              ${state.mobileTab === 'dossier' ? renderDossierColumn(c) : ''}
-            </div>
-            
-            <nav class="border-t border-noir-800 bg-noir-900 px-2 py-1.5 flex items-center justify-around z-20 flex-shrink-0">
-              <button onclick="state.mobileTab = 'investigation'; render();" class="flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${state.mobileTab === 'investigation' ? 'bg-red-600/20 text-red-400 border border-red-500/40' : 'text-slate-400'}">
-                <span class="text-sm">🔍</span>
-                <span>المسرح والاستجواب</span>
-              </button>
-              <button onclick="state.mobileTab = 'assistant'; render();" class="flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${state.mobileTab === 'assistant' ? 'bg-sky-600/20 text-sky-400 border border-sky-500/40' : 'text-slate-400'}">
-                <span class="text-sm">⚖️</span>
-                <span>المستشار القانوني</span>
-              </button>
-              <button onclick="state.mobileTab = 'dossier'; render();" class="flex-1 py-1.5 rounded text-xs font-bold transition flex flex-col items-center ${state.mobileTab === 'dossier' ? 'bg-amber-600/20 text-amber-400 border border-amber-500/40' : 'text-slate-400'}">
-                <span class="text-sm">📁</span>
-                <span>الأدلة والملاحظات</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      `;
+    function renderActiveCaseWorkspace(c) {
+      if (!c) return '<div class="flex-1 flex items-center justify-center text-slate-500 text-sm p-6 text-center">لا توجد قضايا. افتح ملف قضية جديدة.</div>';
+      if (isDesktop()) {
+        return `<div class="flex flex-1 h-full min-h-0 min-w-0 overflow-hidden">
+          ${renderAssistantColumn(c)}${renderInvestigationColumn(c)}${renderDossierColumn(c)}</div>`;
+      }
+      const tabs = [
+        ['investigation', '🔍', 'المسرح والاستجواب', 'bg-red-600/20 text-red-400 border border-red-500/40'],
+        ['assistant', '⚖️', 'المستشار القانوني', 'bg-sky-600/20 text-sky-400 border border-sky-500/40'],
+        ['dossier', '📁', 'الأدلة والملاحظات', 'bg-amber-600/20 text-amber-400 border border-amber-500/40']
+      ];
+      const body = state.mobileTab === 'assistant' ? renderAssistantColumn(c)
+                 : state.mobileTab === 'dossier' ? renderDossierColumn(c)
+                 : renderInvestigationColumn(c);
+      return `<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div class="flex-1 min-h-0 overflow-hidden flex">${body}</div>
+        <nav class="border-t border-noir-800 bg-noir-900 px-2 py-1.5 flex items-center justify-around gap-1 flex-shrink-0">
+          ${tabs.map(([k, ico, label, active]) => `
+            <button onclick="state.mobileTab = '${k}'; render();" class="flex-1 py-1.5 rounded text-[11px] font-bold transition flex flex-col items-center ${state.mobileTab === k ? active : 'text-slate-400'}">
+              <span class="text-sm">${ico}</span><span>${label}</span>
+            </button>`).join('')}
+        </nav></div>`;
     }
 
     function renderInvestigationColumn(c) {
@@ -1085,14 +1094,17 @@ ${narrative}
       if (area) area.value = '';
     }
 
-    // Immediate and robust initialization to guarantee rendering without black screen
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', render);
-    } else {
-      render();
+    function start() {
+      try { render(); } catch (e) { showFatal(e); }
+      setTimeout(() => {
+        if (typeof tailwind === 'undefined') {
+          const w = document.getElementById('boot-warning');
+          if (w) w.style.display = 'block';
+        }
+      }, 2500);
     }
-    window.addEventListener('load', render);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
   </script>
 </body>
 </html>
-                    <div>المسرح: <span class="text-slate-300">${escapeHtml(state.draft.dossier?.crimeSceneLocation || '-')}</span></div>
