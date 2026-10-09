@@ -1,3 +1,4 @@
+// src/useCaseStore.js
 import { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { SUPPORTED_MODELS, DEFAULT_MODEL } from './api';
 
@@ -6,13 +7,16 @@ const STORAGE_KEYS = {
   SELECTED_MODEL: 'casemaster_gemini_model',
   CASES_LIST: 'casemaster_cases_history',
   ACTIVE_CASE_ID: 'casemaster_active_case_id',
-  NOTEPAD: 'casemaster_investigator_notepad',
+  NOTEPAD_PREFIX: 'casemaster_investigator_notepad_',
 };
 
-// Simple base64-based obfuscator to prevent accidental inspection of secret solutions
+// UTF-8 safe obfuscator to prevent accidental inspection of secret solutions across Arabic and special chars
 const obfuscateSolution = (solutionObj) => {
   try {
-    return btoa(encodeURIComponent(JSON.stringify(solutionObj)));
+    const jsonStr = JSON.stringify(solutionObj);
+    const bytes = new TextEncoder().encode(jsonStr);
+    const binString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
+    return btoa(binString);
   } catch {
     return JSON.stringify(solutionObj);
   }
@@ -20,7 +24,10 @@ const obfuscateSolution = (solutionObj) => {
 
 const deobfuscateSolution = (encodedStr) => {
   try {
-    return JSON.parse(decodeURIComponent(atob(encodedStr)));
+    const binString = atob(encodedStr);
+    const bytes = Uint8Array.from(binString, (m) => m.charCodeAt(0));
+    const jsonStr = new TextDecoder().decode(bytes);
+    return JSON.parse(jsonStr);
   } catch {
     try {
       return JSON.parse(encodedStr);
@@ -56,44 +63,80 @@ export function CaseProvider({ children }) {
     return localStorage.getItem(STORAGE_KEYS.ACTIVE_CASE_ID) || null;
   });
 
-  // 3. Investigator's Free Notepad (per-case or global draft)
-  const [notepadContent, setNotepadContentState] = useState(() => {
-    return localStorage.getItem(STORAGE_KEYS.NOTEPAD) || '';
-  });
+  // 3. Investigator's Free Notepad (scoped per case)
+  const [notepadContent, setNotepadContentState] = useState('');
 
-  // 4. UI Modals
+  // Synchronize scoped notepad whenever activeCaseId changes
+  useEffect(() => {
+    const key = activeCaseId 
+      ? `${STORAGE_KEYS.NOTEPAD_PREFIX}${activeCaseId}` 
+      : `${STORAGE_KEYS.NOTEPAD_PREFIX}general`;
+    setNotepadContentState(localStorage.getItem(key) || '');
+  }, [activeCaseId]);
+
+  // 4. UI Modals & Responsive Drawer
   const [isNewCaseModalOpen, setIsNewCaseModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Sync state changes with localStorage
   const setApiKey = useCallback((key) => {
     const trimmed = (key || '').trim();
     setApiKeyState(trimmed);
-    localStorage.setItem(STORAGE_KEYS.API_KEY, trimmed);
+    try {
+      localStorage.setItem(STORAGE_KEYS.API_KEY, trimmed);
+    } catch (e) {
+      console.warn('LocalStorage error while saving API key:', e);
+    }
   }, []);
 
   const setSelectedModel = useCallback((model) => {
     setSelectedModelState(model);
-    localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, model);
+    try {
+      localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, model);
+    } catch (e) {
+      console.warn('LocalStorage error while saving selected model:', e);
+    }
   }, []);
 
   const setActiveCaseId = useCallback((id) => {
     setActiveCaseIdState(id);
-    if (id) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_CASE_ID, id);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_CASE_ID);
+    try {
+      if (id) {
+        localStorage.setItem(STORAGE_KEYS.ACTIVE_CASE_ID, id);
+      } else {
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_CASE_ID);
+      }
+    } catch (e) {
+      console.warn('LocalStorage error while saving active case id:', e);
     }
   }, []);
 
   const setNotepadContent = useCallback((content) => {
     setNotepadContentState(content);
-    localStorage.setItem(STORAGE_KEYS.NOTEPAD, content);
-  }, []);
+    const key = activeCaseId 
+      ? `${STORAGE_KEYS.NOTEPAD_PREFIX}${activeCaseId}` 
+      : `${STORAGE_KEYS.NOTEPAD_PREFIX}general`;
+    try {
+      localStorage.setItem(key, content);
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded while saving notepad content:', e);
+    }
+  }, [activeCaseId]);
 
-  // Save cases array to localStorage
+  // Save cases array to localStorage safely with QuotaExceeded fallback
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.CASES_LIST, JSON.stringify(cases));
+    try {
+      localStorage.setItem(STORAGE_KEYS.CASES_LIST, JSON.stringify(cases));
+    } catch (e) {
+      console.warn('Storage quota exceeded, removing oldest solved case if available...');
+      if (cases.length > 2) {
+        const pruned = cases.slice(0, cases.length - 1);
+        try {
+          localStorage.setItem(STORAGE_KEYS.CASES_LIST, JSON.stringify(pruned));
+        } catch (_) {}
+      }
+    }
   }, [cases]);
 
   // Retrieve current active case object
@@ -278,6 +321,8 @@ export function CaseProvider({ children }) {
     setIsNewCaseModalOpen,
     isSettingsModalOpen,
     setIsSettingsModalOpen,
+    isSidebarOpen,
+    setIsSidebarOpen,
   };
 
   return <CaseContext.Provider value={value}>{children}</CaseContext.Provider>;
